@@ -52,6 +52,14 @@
     return d + 'Z';
   }
 
+  /**
+   * Chemin complet d'une géométrie : contour + parties éventuelles (ex. bras
+   * de profil). Sous-chemins de même sens : le remplissage forme une union.
+   */
+  function shapePath(g) {
+    return [g.outline, ...(g.parts || [])].map((pts) => smoothPath(pts)).join(' ');
+  }
+
   /** Boîte englobante commune à plusieurs géométries. */
   function bounds(geoms) {
     let minX = Infinity;
@@ -106,7 +114,7 @@
     geoms.forEach((g, i) => {
       if (i === selected) return;
       const color = timeColor(n > 1 ? i / (n - 1) : 1, tokens);
-      el('path', { d: smoothPath(g.outline), class: 'sil-outline', style: `stroke:${color};opacity:0.85` }, svg).appendChild(
+      el('path', { d: shapePath(g), class: 'sil-outline', style: `stroke:${color};opacity:0.85` }, svg).appendChild(
         titleNode(g)
       );
     });
@@ -116,7 +124,7 @@
       el(
         'path',
         {
-          d: smoothPath(focus.outline),
+          d: shapePath(focus),
           class: 'sil-fill',
           style: `fill:${withAlpha(color, 0.16)};stroke:${color};stroke-width:0.7`,
         },
@@ -135,8 +143,8 @@
   function compare(svg, a, b, { tokens, F, labels = true }) {
     const { half, H } = prepare(svg, [a, b], { labelSpace: labels ? 30 : 0 });
     drawGuides(svg, H, half, F);
-    el('path', { d: smoothPath(a.outline), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-width:0.55;stroke-dasharray:1.6 1.1` }, svg);
-    el('path', { d: smoothPath(b.outline), class: 'sil-fill', style: `fill:${withAlpha(tokens.series[0], 0.18)};stroke:${tokens.series[0]};stroke-width:0.7` }, svg);
+    el('path', { d: shapePath(a), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-width:0.55;stroke-dasharray:1.6 1.1` }, svg);
+    el('path', { d: shapePath(b), class: 'sil-fill', style: `fill:${withAlpha(tokens.series[0], 0.18)};stroke:${tokens.series[0]};stroke-width:0.7` }, svg);
     if (labels) drawLabels(svg, a, b, half);
   }
 
@@ -157,11 +165,11 @@
 
     const fillA = `fill:${withAlpha(tokens.series[1], 0.22)};stroke:${tokens.series[1]};stroke-width:0.7`;
     const fillB = `fill:${withAlpha(tokens.series[0], 0.22)};stroke:${tokens.series[0]};stroke-width:0.7`;
-    el('path', { d: smoothPath(a.outline), class: 'sil-fill', style: fillA, 'clip-path': `url(#${uid}-a)` }, svg);
-    el('path', { d: smoothPath(b.outline), class: 'sil-fill', style: fillB, 'clip-path': `url(#${uid}-b)` }, svg);
+    el('path', { d: shapePath(a), class: 'sil-fill', style: fillA, 'clip-path': `url(#${uid}-a)` }, svg);
+    el('path', { d: shapePath(b), class: 'sil-fill', style: fillB, 'clip-path': `url(#${uid}-b)` }, svg);
     // Contour fantôme de l'autre date pour comparer au niveau du séparateur
-    el('path', { d: smoothPath(b.outline), class: 'sil-outline', style: `stroke:${tokens.series[0]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-a)` }, svg);
-    el('path', { d: smoothPath(a.outline), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-b)` }, svg);
+    el('path', { d: shapePath(b), class: 'sil-outline', style: `stroke:${tokens.series[0]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-a)` }, svg);
+    el('path', { d: shapePath(a), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-b)` }, svg);
 
     el('line', { x1: splitX, x2: splitX, y1: -4, y2: H + 4, style: 'stroke:var(--text-primary);stroke-width:0.35' }, svg);
     el('text', { x: -W + 1, y: 2, class: 'sil-label sil-label--strong' }, svg).textContent = fmtDate(a.date);
@@ -220,7 +228,7 @@
     const clipId = `clip-${uid}`;
     const defs = el('defs', {}, svg);
     const clip = el('clipPath', { id: clipId }, defs);
-    el('path', { d: smoothPath(b.outline) }, clip);
+    el('path', { d: shapePath(b) }, clip);
 
     const pct = (key) => {
       const va = a.source[key];
@@ -270,8 +278,8 @@
     el('rect', { x: outerL, y: handTop, width: W - outerL, height: handH, style: `fill:${tokens.mid}` }, g);
     el('rect', { x: -W, y: handTop, width: W - outerR, height: handH, style: `fill:${tokens.mid}` }, g);
 
-    el('path', { d: smoothPath(b.outline), class: 'sil-outline', style: 'stroke:var(--text-secondary);stroke-width:0.4' }, svg);
-    el('path', { d: smoothPath(a.outline), class: 'sil-outline', style: 'stroke:var(--text-muted);stroke-width:0.3;stroke-dasharray:1.2 1' }, svg);
+    el('path', { d: shapePath(b), class: 'sil-outline', style: 'stroke:var(--text-secondary);stroke-width:0.4' }, svg);
+    el('path', { d: shapePath(a), class: 'sil-outline', style: 'stroke:var(--text-muted);stroke-width:0.3;stroke-dasharray:1.2 1' }, svg);
   }
 
   function addRect(parent, x, yTop, w, h, pct, tokens, label) {
@@ -285,7 +293,7 @@
   function mini(svg, geom, refGeoms, { color, tokens, F }) {
     const { half, H } = prepare(svg, refGeoms);
     drawGuides(svg, H, half, F);
-    el('path', { d: smoothPath(geom.outline), class: 'sil-fill', style: `fill:${withAlpha(color, 0.2)};stroke:${color};stroke-width:0.8` }, svg);
+    el('path', { d: shapePath(geom), class: 'sil-fill', style: `fill:${withAlpha(color, 0.2)};stroke:${color};stroke-width:0.8` }, svg);
   }
 
   SP.silhouette.renderer = { overlay, compare, split, heat, mini, timeColor, divergingColor, smoothPath };

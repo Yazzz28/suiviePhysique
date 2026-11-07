@@ -267,9 +267,11 @@
 
   /** Interpolation entre deux géométries (même topologie). */
   function interpolate(a, b, t) {
+    const mix = (pa, pb) => pa.map((p, i) => [lerp(p[0], pb[i][0], t), lerp(p[1], pb[i][1], t)]);
     return {
       ...b,
-      outline: a.outline.map((p, i) => [lerp(p[0], b.outline[i][0], t), lerp(p[1], b.outline[i][1], t)]),
+      outline: mix(a.outline, b.outline),
+      parts: b.parts ? b.parts.map((part, i) => mix(a.parts[i], part)) : undefined,
     };
   }
 

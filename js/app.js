@@ -84,6 +84,7 @@
     toggleSection('composition', hasFull);
     toggleSection('measurements', hasMeas);
     toggleSection('silhouette', hasMeas);
+    toggleSection('sizes', hasMeas);
 
     renderSubtitle(ctx);
     safe('kpi', () => SP.ui.kpiCards.render($('kpis'), ctx));
@@ -101,6 +102,7 @@
       safe('mensurations', () => SP.charts.measurements.render(ctx));
       safe('indices de mensurations', () => SP.charts.measurementIndices.render(ctx));
       safe('silhouette', () => SP.silhouette.view.render(ctx));
+      safe('tailles', () => SP.ui.sizeCards.render(ctx));
     }
     safe('tableaux', () => {
       SP.ui.tables.renderMeasurements($('table-measurements'), ctx.measurements);
@@ -143,6 +145,7 @@
     $('input-height').value = isFiniteNumber(s.heightCm) ? s.heightCm : '';
     $('input-target').value = isFiniteNumber(s.targetWeight) ? s.targetWeight : '';
     $('input-sex').value = s.sex;
+    $('input-rise').value = s.rise;
   }
 
   function bindSettings() {
@@ -157,6 +160,7 @@
     });
     $('input-target').addEventListener('change', (e) => state.setSetting('targetWeight', num(e.target)));
     $('input-sex').addEventListener('change', (e) => state.setSetting('sex', e.target.value));
+    $('input-rise').addEventListener('change', (e) => state.setSetting('rise', e.target.value));
   }
 
   /* ---------------- Thème clair / sombre (non persisté) ---------------- */

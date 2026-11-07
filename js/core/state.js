@@ -25,6 +25,7 @@
       heightCm: null, // déduite de l'IMC, modifiable
       targetWeight: null,
       sex: 'male',
+      rise: 'navel', // pantalon porté au nombril ('navel') ou à la taille naturelle ('natural')
     },
   });
 
