@@ -83,7 +83,7 @@
   }
 
   /** Matrice HTML : zones en lignes, dates en colonnes, % vs premier relevé. */
-  function renderMatrix({ measurements }) {
+  function renderMatrix({ measurements, quality, settings }) {
     const host = document.getElementById('meas-matrix');
     if (!host || !measurements.length) return;
     const t = theme.tokens();
@@ -94,6 +94,9 @@
         .map((m) => {
           const v = m[z.key];
           const base = first[z.key];
+          if (settings.excludeOutliers && quality && quality.isFlagged(m.date, z.key)) {
+            return `<td class="matrix__cell matrix__cell--flag" data-tip="${escapeHtml(z.label)} · ${fmtDate(m.date, 'long')} : valeur douteuse exclue">⚠</td>`;
+          }
           if (!isFiniteNumber(v) || !isFiniteNumber(base) || !base) return '<td class="matrix__cell">—</td>';
           const pct = ((v - base) / base) * 100;
           const strong = Math.abs(pct) > 5;

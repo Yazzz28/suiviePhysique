@@ -419,3 +419,54 @@
 @media (max-width: 720px) {
   .kpi--wide { grid-column: 1 / -1; }
 }
+
+/* ---- Jalons, qualité des mesures ---- */
+.records {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.records > div { display: flex; flex-direction: column; gap: 2px; }
+.records strong { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+.milestones {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.milestone {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.88rem;
+}
+
+.milestone__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--axis);
+  flex: none;
+}
+
+.milestone.is-done .milestone__dot { background: var(--good); border-color: var(--good); }
+.milestone__label { flex: 1; }
+.milestone__status { font-size: 0.82rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.milestone__status.is-done { color: var(--good-text); font-weight: 600; }
+
+.quality-list {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+}
+
+.data-table .cell-flag { color: var(--serious); font-weight: 600; }
+
+.field input[type="checkbox"] { width: auto; accent-color: var(--accent); }

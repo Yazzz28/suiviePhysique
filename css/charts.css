@@ -250,3 +250,10 @@
   color: var(--text-primary);
   cursor: default;
 }
+
+.matrix__cell--flag {
+  background: transparent;
+  outline: 1px dashed var(--serious);
+  outline-offset: -2px;
+  color: var(--serious);
+}

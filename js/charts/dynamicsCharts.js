@@ -171,9 +171,52 @@
     }
   }
 
+  /**
+   * Rythme relatif : % du poids perdu par semaine. Repère courant : 0,5 à 1 %
+   * par semaine pour limiter la perte de muscle.
+   */
+  function renderRatePct({ daily }) {
+    const t = theme.tokens();
+    const rows = SP.analysis.milestones.relativeRate(daily, ROLLING_WINDOW_DAYS);
+    if (!rows.length) return;
+    const data = rows.map((r) => ({ x: r.date.getTime(), y: r.pct }));
+    const values = data.map((d) => d.y);
+    theme.create('c-rate-pct', {
+      type: 'line',
+      data: { datasets: [{ label: 'Rythme', data, borderColor: t.series[0] }] },
+      options: {
+        parsing: false,
+        scales: {
+          x: theme.timeScale(data[0].x, data[data.length - 1].x),
+          y: theme.valueScale({
+            min: Math.min(0, Math.floor(Math.min(...values) * 4) / 4),
+            max: Math.max(1.5, Math.ceil(Math.max(...values) * 4) / 4),
+            ticks: { callback: (v) => fmt(v, 2) + ' %' },
+          }),
+        },
+        plugins: {
+          spBands: {
+            bands: [
+              { from: 0.5, to: 1, color: withAlpha(t.good, 0.12), label: 'Zone conseillée (0,5-1 %)' },
+              { from: 1, to: 10, color: withAlpha(t.warning, 0.12), label: 'Rapide' },
+            ],
+          },
+          tooltip: {
+            ...theme.timeTooltip(),
+            callbacks: {
+              ...theme.timeTooltip().callbacks,
+              label: (ctx) => ` ${fmt(ctx.parsed.y, 2)} % du poids par semaine`,
+            },
+          },
+        },
+      },
+    });
+  }
+
   function render(ctx) {
     renderDeficit(ctx);
     renderSpeed(ctx);
+    renderRatePct(ctx);
     renderHistogram(ctx);
   }
 

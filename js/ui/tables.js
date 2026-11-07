@@ -20,7 +20,7 @@
     return (invert ? !down : down) ? 'cell-down' : 'cell-up';
   }
 
-  function renderMeasurements(host, measurements) {
+  function renderMeasurements(host, measurements, quality) {
     if (!host) return;
     if (!measurements.length) {
       host.innerHTML = '<p class="muted">Aucune mensuration.</p>';
@@ -30,9 +30,12 @@
     const rows = measurements
       .map((m, i) => {
         const prev = measurements[i - 1];
-        const cells = CM_ZONES.map(
-          (z) => `<td class="${prev ? trendClass(m[z.key], prev[z.key]) : ''}">${fmt(m[z.key], 1)}</td>`
-        ).join('');
+        const cells = CM_ZONES.map((z) => {
+          if (quality && quality.isFlagged(m.date, z.key)) {
+            return `<td class="cell-flag" title="Valeur douteuse (écart à la tendance)">⚠ ${fmt(m[z.key], 1)}</td>`;
+          }
+          return `<td class="${prev ? trendClass(m[z.key], prev[z.key]) : ''}">${fmt(m[z.key], 1)}</td>`;
+        }).join('');
         return `<tr><td>${fmtDate(m.date, 'weekday')}</td>${cells}<td>${fmt(m.whr, 2)}</td><td>${fmt(m.navyFat, 1)}</td></tr>`;
       })
       .reverse()

@@ -6,10 +6,10 @@
   'use strict';
 
   const { fmt, fmtDelta, fmtDate, daysBetween, isFiniteNumber, first, last } = SP.core.utils;
-  const { trends, metrics } = SP.analysis;
+  const { trends, metrics, milestones } = SP.analysis;
   const { ENERGY, RATE_WINDOW_DAYS } = SP.analysis.projection;
 
-  function build({ composition, daily, measurements, settings, projection }) {
+  function build({ composition, daily, measurements, settings, projection, records, quality }) {
     const out = [];
     const push = (tone, icon, html) => out.push({ tone, icon, html });
 
@@ -172,7 +172,95 @@
       );
     }
 
+    pushRecentComposition(push, daily);
+    pushStagnation(push, daily);
+    pushRate(push, daily);
+    pushNextMilestone(push, records);
+    pushQuality(push, quality, settings);
+
     return out;
+  }
+
+  /** Part de masse maigre dans la perte récente : alerte perte musculaire. */
+  function pushRecentComposition(push, daily) {
+    const rc = milestones.recentComposition(daily);
+    if (!rc || !(rc.dWeight <= -0.8) || !isFiniteNumber(rc.leanShare)) return;
+    const pct = Math.round(rc.leanShare * 100);
+    const tone = pct >= 40 ? 'bad' : pct >= 30 ? 'warn' : 'good';
+    const advice =
+      pct >= 30
+        ? ` Pour préserver le muscle : environ 1,6 g de protéines par kg de poids et par jour, et de la musculation 2 à 3 fois par semaine.`
+        : '';
+    push(
+      tone,
+      '💪',
+      `Sur les ${rc.windowDays} derniers jours, <strong>${pct} % de la perte vient de la masse maigre</strong> ` +
+        `(${fmtDelta(rc.dLean, 1)} kg, dont ${fmtDelta(rc.dMuscle, 1)} kg de muscle selon la balance, eau comprise).` +
+        (pct >= 40 ? ' C\'est au-dessus du seuil d\'alerte de 40 %.' : pct >= 30 ? ' C\'est proche du seuil d\'alerte de 40 %.' : '') +
+        advice
+    );
+  }
+
+  /** Stagnation : pas de nouveau plus bas depuis N jours, rétention d'eau ou vrai plateau. */
+  function pushStagnation(push, daily) {
+    const s = milestones.stagnation(daily);
+    if (!s || !s.stalled) return;
+    let detail = '';
+    if (isFiniteNumber(s.fatDelta) && isFiniteNumber(s.waterDelta)) {
+      detail =
+        s.fatDelta < -0.2 && s.waterDelta > 0.2
+          ? ` La masse grasse continue pourtant de baisser (${fmtDelta(s.fatDelta, 1)} kg) et l'eau monte (${fmtDelta(s.waterDelta, 1)} point) : probablement de la <strong>rétention d'eau</strong>, la perte devrait réapparaître.`
+          : s.fatDelta >= -0.2
+            ? ` La masse grasse ne baisse plus non plus (${fmtDelta(s.fatDelta, 1)} kg) : <strong>vrai plateau</strong> probable, l'apport ou l'activité est à réajuster.`
+            : '';
+    }
+    push(
+      'warn',
+      '⏸',
+      `<strong>Aucun nouveau plus bas depuis ${s.days} jours</strong> (moyenne 7 j, plus bas ${fmt(s.lowest, 1)} kg le ${fmtDate(s.since)}).` + detail
+    );
+  }
+
+  /** Rythme relatif en % du poids par semaine. */
+  function pushRate(push, daily) {
+    const rows = milestones.relativeRate(daily, SP.analysis.projection.RATE_WINDOW_DAYS);
+    if (!rows.length) return;
+    const pct = rows[rows.length - 1].pct;
+    const tone = pct >= 0.5 && pct <= 1 ? 'good' : pct > 1 ? 'warn' : 'info';
+    const comment =
+      pct > 1
+        ? 'un peu au-dessus de la zone conseillée (0,5 à 1 %) : surveille la perte de muscle.'
+        : pct >= 0.5
+          ? 'dans la zone conseillée (0,5 à 1 %).'
+          : pct > 0
+            ? 'sous la zone habituelle (0,5 à 1 %) : perte lente.'
+            : 'pas de perte sur la période récente.';
+    push(tone, '%', `Rythme actuel : <strong>${fmt(pct, 2)} % du poids par semaine</strong>, ${comment}`);
+  }
+
+  /** Prochain palier ou catégorie d'IMC. */
+  function pushNextMilestone(push, records) {
+    if (!records) return;
+    const next = [...records.paliers.map((p) => ({ ...p, label: `${fmt(p.weight, 0)} kg` })), ...records.bmi.map((b) => ({ ...b, label: `IMC < ${fmt(b.value, 0)} (${fmt(b.weight, 1)} kg)` }))]
+      .filter((m) => !m.date && m.projected)
+      .sort((a, b) => a.projected.date - b.projected.date)[0];
+    if (!next) return;
+    push('info', '🏁', `Prochain jalon : <strong>${next.label}</strong>, prévu vers le ${fmtDate(next.projected.date, 'long')}.`);
+  }
+
+  /** Mesures douteuses détectées. */
+  function pushQuality(push, quality, settings) {
+    if (!quality || !quality.flags.length) return;
+    const sessions = new Map();
+    quality.flags.forEach((f) => sessions.set(f.date.getTime(), (sessions.get(f.date.getTime()) || 0) + 1));
+    const worst = [...sessions.entries()].sort((a, b) => b[1] - a[1])[0];
+    push(
+      'warn',
+      '⚠',
+      `<strong>${quality.flags.length} mensuration(s) douteuse(s)</strong> (écart à la tendance supérieur à l'erreur normale d'un mètre ruban)` +
+        (worst[1] >= 3 ? `, dont ${worst[1]} sur le relevé du ${fmtDate(new Date(worst[0]), 'long')}, probablement à refaire` : '') +
+        `. ${settings.excludeOutliers ? 'Elles sont exclues des graphiques.' : 'Elles sont incluses dans les graphiques.'}`
+    );
   }
 
   SP.analysis.insights = { build };

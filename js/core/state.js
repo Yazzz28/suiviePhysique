@@ -25,6 +25,7 @@
       heightCm: null, // déduite de l'IMC, modifiable
       targetWeight: null,
       sex: 'male',
+      excludeOutliers: true, // exclure les mensurations douteuses des graphiques
     },
   });
 

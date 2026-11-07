@@ -50,14 +50,23 @@
     const composition = metrics.enrichComposition(v.composition, heightCm);
     const daily = metrics.dailyAverages(composition);
     const firstWeight = v.allComposition.find((r) => isFiniteNumber(r.weight));
-    // Poids associé à chaque relevé de mensurations (sur toutes les pesées, pas seulement la période)
-    const weightAt = metrics.weightLookup(metrics.dailyAverages(v.allComposition));
+    // Toutes les pesées (jalons, poids associé aux mensurations), indépendamment de la période
+    const allDaily = metrics.dailyAverages(metrics.enrichComposition(v.allComposition, heightCm));
+    const weightAt = metrics.weightLookup(allDaily);
+    // Qualité des mensurations : analysée sur tous les relevés (tendance plus robuste)
+    const quality = SP.analysis.quality.analyze(v.allMeasurements);
+    const usable = v.settings.excludeOutliers ? SP.analysis.quality.clean(v.measurements, quality) : v.measurements;
+    const projection = SP.analysis.projection.build({ daily, composition });
     return {
       composition,
       daily,
+      allDaily,
       startWeight: firstWeight ? firstWeight.weight : null,
-      projection: SP.analysis.projection.build({ daily, composition }),
-      measurements: metrics.enrichMeasurements(v.measurements, heightCm, sex, weightAt),
+      projection,
+      records: SP.analysis.milestones.records(allDaily, { heightCm, projection }),
+      quality,
+      measurements: metrics.enrichMeasurements(usable, heightCm, sex, weightAt),
+      rawMeasurements: metrics.enrichMeasurements(v.measurements, heightCm, sex, weightAt),
       settings: v.settings,
       period: v.period,
     };
@@ -88,6 +97,8 @@
     renderSubtitle(ctx);
     safe('kpi', () => SP.ui.kpiCards.render($('kpis'), ctx));
     safe('insights', () => renderInsights(ctx));
+    safe('jalons', () => SP.ui.summaryPanels.renderMilestones($('milestones'), ctx.records));
+    safe('bilan mensuel', () => SP.ui.summaryPanels.renderMonthly($('monthly'), SP.analysis.milestones.monthly(ctx.daily, ctx.measurements)));
     if (hasComp) {
       safe('poids', () => SP.charts.weight.render(ctx));
       safe('dynamique', () => SP.charts.dynamics.render(ctx));
@@ -98,12 +109,13 @@
       safe('cartes de composition', () => SP.charts.compositionMap.render(ctx));
     }
     if (hasMeas) {
+      safe('qualité', () => SP.ui.summaryPanels.renderQuality($('quality'), ctx.quality, ctx.settings.excludeOutliers));
       safe('mensurations', () => SP.charts.measurements.render(ctx));
       safe('indices de mensurations', () => SP.charts.measurementIndices.render(ctx));
       safe('silhouette', () => SP.silhouette.view.render(ctx));
     }
     safe('tableaux', () => {
-      SP.ui.tables.renderMeasurements($('table-measurements'), ctx.measurements);
+      SP.ui.tables.renderMeasurements($('table-measurements'), ctx.rawMeasurements, ctx.quality);
       SP.ui.tables.renderComposition($('table-composition'), ctx.composition);
     });
   }
@@ -143,6 +155,7 @@
     $('input-height').value = isFiniteNumber(s.heightCm) ? s.heightCm : '';
     $('input-target').value = isFiniteNumber(s.targetWeight) ? s.targetWeight : '';
     $('input-sex').value = s.sex;
+    $('input-exclude-outliers').checked = s.excludeOutliers;
   }
 
   function bindSettings() {
@@ -157,6 +170,7 @@
     });
     $('input-target').addEventListener('change', (e) => state.setSetting('targetWeight', num(e.target)));
     $('input-sex').addEventListener('change', (e) => state.setSetting('sex', e.target.value));
+    $('input-exclude-outliers').addEventListener('change', (e) => state.setSetting('excludeOutliers', e.target.checked));
   }
 
   /* ---------------- Thème clair / sombre (non persisté) ---------------- */

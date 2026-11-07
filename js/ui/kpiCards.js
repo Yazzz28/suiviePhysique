@@ -104,7 +104,7 @@
           value: recent.slopePerWeek,
           unit: 'kg/sem',
           decimals: 2,
-          meta: `R² ${fmt(recent.r2, 2)} — tendance linéaire`,
+          meta: `≈ ${fmt((-recent.slopePerWeek / last(composition, 'weight').weight) * 100, 2)} % du poids / sem. · R² ${fmt(recent.r2, 2)}`,
         })
       );
     }
