@@ -9,6 +9,15 @@ Application web (HTML / CSS / JS, sans serveur) pour analyser l'évolution de to
 1. Ouvre `index.html` dans ton navigateur (double-clic suffit). Une connexion internet est nécessaire pour charger la librairie de graphiques (Chart.js via CDN).
 2. Dépose tes fichiers CSV (un seul ou les deux). Le type de chaque fichier est détecté automatiquement.
 
+### Installer sur mobile
+
+L'app est une PWA installable depuis sa version en ligne (GitHub Pages) :
+
+- **Android (Chrome)** : menu ⋮ → *Installer l'application*.
+- **iPhone (Safari)** : bouton Partager → *Sur l'écran d'accueil*.
+
+Le service worker ne met **rien en cache** : il sert uniquement à rendre l'app installable. Une connexion internet reste nécessaire à l'ouverture.
+
 ### Pas de balance connectée ?
 
 Sur l'écran d'accueil, télécharge les modèles vides :

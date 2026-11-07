@@ -6,6 +6,18 @@
   <title>Suivi Physique</title>
   <meta name="description" content="Analyse locale des exports : poids, composition corporelle, mensurations et silhouette. Aucune donnée stockée.">
 
+  <!-- PWA (installable, sans cache) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Suivi Physique">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -376,5 +388,6 @@
   <script src="js/ui/dateFilter.js"></script>
   <!-- Application -->
   <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>
