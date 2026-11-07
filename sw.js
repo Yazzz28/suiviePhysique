@@ -1,18 +1,113 @@
 /**
- * Service worker minimal — AUCUN cache.
+ * Service worker — mise en cache du CODE de l'application uniquement.
  *
- * Il existe uniquement pour rendre l'application installable (PWA).
- * Pas de gestionnaire « fetch » : toutes les requêtes passent directement
- * par le réseau, comme sans service worker. Rien n'est stocké.
+ * - Les données de l'utilisateur (CSV) ne passent jamais par ici : elles sont
+ *   lues via FileReader, en mémoire, et ne sont ni requêtées ni stockées.
+ * - Seuls les fichiers de l'app (même origine, requêtes GET) sont mis en cache.
+ *
+ * Mises à jour : incrémenter CACHE_VERSION à chaque déploiement qui modifie
+ * un fichier de l'app. Le navigateur détecte alors un nouveau service worker,
+ * l'installe en attente, et la page propose « Recharger ». À l'activation,
+ * les anciens caches sont supprimés.
  */
-self.addEventListener('install', () => self.skipWaiting());
+const CACHE_VERSION = 'v1';
+const CACHE_NAME = `suivi-physique-${CACHE_VERSION}`;
+
+/** Fichiers pré-chargés à l'installation (chemins relatifs à ce fichier). */
+const APP_FILES = [
+  './',
+  'index.html',
+  'manifest.json',
+  'css/variables.css',
+  'css/base.css',
+  'css/layout.css',
+  'css/components.css',
+  'css/charts.css',
+  'icons/icon.svg',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
+  'icons/icon-maskable-512.png',
+  'icons/apple-touch-icon.png',
+  'js/vendor/chart.umd.js',
+  'js/vendor/hammer.min.js',
+  'js/vendor/chartjs-plugin-zoom.min.js',
+  'js/core/namespace.js',
+  'js/core/utils.js',
+  'js/core/state.js',
+  'js/parsers/csvUtils.js',
+  'js/parsers/compositionParser.js',
+  'js/parsers/measurementsParser.js',
+  'js/parsers/fileDetector.js',
+  'js/analysis/metrics.js',
+  'js/analysis/trends.js',
+  'js/analysis/insights.js',
+  'js/charts/chartTheme.js',
+  'js/charts/weightCharts.js',
+  'js/charts/compositionCharts.js',
+  'js/charts/measurementCharts.js',
+  'js/charts/calendarHeatmap.js',
+  'js/silhouette/bodyModel.js',
+  'js/silhouette/silhouetteRenderer.js',
+  'js/silhouette/silhouetteView.js',
+  'js/ui/tooltip.js',
+  'js/ui/dropzone.js',
+  'js/ui/templates.js',
+  'js/ui/kpiCards.js',
+  'js/ui/tables.js',
+  'js/ui/dateFilter.js',
+  'js/app.js',
+  'js/pwa.js',
+];
+
+const INDEX_URL = new URL('index.html', self.location).href;
+
+self.addEventListener('install', (event) => {
+  // `cache: 'reload'` contourne le cache HTTP pour pré-charger les versions à jour.
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_FILES.map((url) => new Request(url, { cache: 'reload' }))))
+  );
+  // Pas de skipWaiting ici : une nouvelle version attend l'accord de l'utilisateur.
+});
 
 self.addEventListener('activate', (event) => {
-  // Purge défensive : supprime tout cache qui aurait pu exister.
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
+  );
+});
+
+/** La page demande d'activer la version en attente (bouton « Recharger »). */
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  if (new URL(request.url).origin !== self.location.origin) return;
+
+  // Navigation : toujours la page de l'app en cache (fonctionne hors ligne).
+  if (request.mode === 'navigate') {
+    event.respondWith(caches.match(INDEX_URL).then((cached) => cached || fetch(request)));
+    return;
+  }
+
+  // Fichiers de l'app : cache d'abord, réseau en secours (et mise en cache).
+  event.respondWith(
+    caches.match(request, { ignoreSearch: true }).then(
+      (cached) =>
+        cached ||
+        fetch(request).then((response) => {
+          if (response.ok && response.type === 'basic') {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+    )
   );
 });

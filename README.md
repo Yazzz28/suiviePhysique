@@ -2,7 +2,7 @@
 
 Application web (HTML / CSS / JS, sans serveur) pour analyser l'évolution de ton corps à partir de deux fichiers CSV : tes **pesées** (poids et composition corporelle) et tes **mensurations** (tours en cm).
 
-**Rien n'est stocké** : pas de localStorage, pas de cache, aucun envoi réseau de tes données. Tout est traité en mémoire dans ton navigateur ; recharger la page efface tout.
+**Tes données ne sont jamais stockées** : pas de localStorage, pas de base locale, aucun envoi réseau. Elles sont traitées en mémoire dans ton navigateur ; recharger la page efface tout. Seul le **code** de l'app est mis en cache, pour qu'elle fonctionne hors connexion.
 
 ## Utilisation
 
@@ -16,7 +16,11 @@ L'app est une PWA installable depuis sa version en ligne (GitHub Pages) :
 - **Android (Chrome)** : menu ⋮ → *Installer l'application*.
 - **iPhone (Safari)** : bouton Partager → *Sur l'écran d'accueil*.
 
-Le service worker ne met **rien en cache** : il sert uniquement à rendre l'app installable. Une connexion internet reste nécessaire pour ouvrir la version en ligne.
+Après la première ouverture, l'app fonctionne **hors connexion** : le service worker ([sw.js](sw.js)) garde en cache les fichiers de l'app (HTML, CSS, JS, icônes), jamais tes CSV.
+
+Quand une nouvelle version est publiée, un bandeau *Nouvelle version disponible* propose de recharger.
+
+**Publier une mise à jour** : à chaque modification d'un fichier de l'app, incrémenter `CACHE_VERSION` dans `sw.js` (`v1` → `v2`…), sinon les appareils déjà installés garderont l'ancienne version. Tout nouveau fichier doit aussi être ajouté à la liste `APP_FILES`.
 
 ### Pas de balance connectée ?
 
