@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suivi Physique</title>
+  <meta name="description" content="Analyse locale des exports : poids, composition corporelle, mensurations et silhouette. Aucune donnée stockée.">
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/charts.css">
+</head>
+<body>
+
+  <!-- ============ En-tête ============ -->
+  <header class="app-header">
+    <div class="app-header__brand">
+      <div class="app-header__logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      </div>
+      <div>
+        <h1>Suivi Physique</h1>
+        <p class="muted" id="summary-subtitle">Analyse de tes exports</p>
+      </div>
+    </div>
+    <div class="app-header__actions">
+      <button type="button" class="btn hidden" id="btn-reload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16"/></svg>
+        <span class="btn__label">Charger d'autres fichiers</span>
+      </button>
+      <button type="button" class="btn btn--icon" id="btn-theme" aria-label="Basculer thème clair / sombre">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ Accueil / dépôt ============ -->
+  <section class="welcome" id="welcome">
+    <h1>Dépose tes exports</h1>
+    <p>Le fichier des pesées (composition corporelle) et/ou le fichier des mensurations. Le type est détecté automatiquement.</p>
+
+    <div class="dropzone" id="dropzone">
+      <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6m0 0-3 3m3-3 3 3"/>
+      </svg>
+      <p class="dropzone__title">Glisse les fichiers .csv ici</p>
+      <p class="dropzone__hint">ou clique pour les sélectionner (plusieurs fichiers possibles)</p>
+      <input type="file" id="file-input" accept=".csv,text/csv,text/plain" multiple aria-label="Choisir les fichiers CSV">
+    </div>
+
+    <div class="file-status" id="file-status" aria-live="polite"></div>
+
+    <div class="alert hidden" id="cdn-error">
+      Chart.js n'a pas pu être chargé (connexion internet requise pour la librairie de graphiques).
+      Les silhouettes et tableaux fonctionneront, mais pas les graphiques.
+    </div>
+
+    <p class="welcome__privacy">🔒 Tout est traité dans ton navigateur, en mémoire. Rien n'est envoyé ni enregistré : recharger la page efface tout.</p>
+
+    <div class="templates">
+      <h2>Pas de balance connectée ? Utilise les modèles</h2>
+      <p class="secondary">Télécharge les modèles vides, remplis-les dans Excel, LibreOffice ou Google Sheets (une ligne par mesure), enregistre en CSV puis dépose-les ci-dessus.</p>
+      <div class="templates__grid">
+        <div class="card templates__card">
+          <h3>Pesées &amp; composition</h3>
+          <p class="secondary">Obligatoire : <strong>La date</strong> et <strong>Poids(kg)</strong>. Toutes les autres colonnes sont facultatives (laisser vide).</p>
+          <p class="muted">Renseigne <strong>IMC</strong> pour que ta taille soit déduite automatiquement, sinon saisis-la dans l'app.</p>
+          <button type="button" class="btn btn--primary" data-template="composition">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg>
+            modele-pesees.csv
+          </button>
+        </div>
+        <div class="card templates__card">
+          <h3>Mensurations</h3>
+          <p class="secondary">Obligatoire : <strong>Date</strong> et au moins un tour en cm. Gauche (L) et droite (R) séparés pour biceps, cuisses et mollets.</p>
+          <p class="muted">La silhouette utilise tous les tours : plus tu en remplis, plus elle est fidèle.</p>
+          <button type="button" class="btn btn--primary" data-template="measurements">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg>
+            modele-mensurations.csv
+          </button>
+        </div>
+      </div>
+      <p class="muted templates__formats">Formats acceptés : séparateur <code>;</code> ou <code>,</code> · décimales <code>89,9</code> ou <code>89.9</code> · dates <code>07/11/2026</code> ou <code>2026-11-07</code> · heure facultative. Les exports bruts de la balance fonctionnent aussi.</p>
+    </div>
+  </section>
+
+  <!-- ============ Dashboard ============ -->
+  <div id="dashboard" class="hidden">
+    <nav class="app-nav" aria-label="Sections">
+      <div class="app-nav__inner">
+        <div class="app-nav__links">
+          <a class="app-nav__link" href="#section-summary">Résumé</a>
+          <a class="app-nav__link" href="#section-weight">Poids</a>
+          <a class="app-nav__link" href="#section-composition">Composition</a>
+          <a class="app-nav__link" href="#section-measurements">Mensurations</a>
+          <a class="app-nav__link" href="#section-silhouette">Silhouette</a>
+          <a class="app-nav__link" href="#section-data">Données</a>
+        </div>
+        <div class="segmented" id="period-filter" role="group" aria-label="Période"></div>
+      </div>
+    </nav>
+
+    <main class="app-main">
+
+      <!-- Réglages (en mémoire uniquement) -->
+      <div class="toolbar">
+        <label class="field">Taille (cm)
+          <input type="number" id="input-height" min="100" max="250" step="0.5" inputmode="decimal">
+        </label>
+        <label class="field">Objectif de poids (kg)
+          <input type="number" id="input-target" min="30" max="300" step="0.5" inputmode="decimal" placeholder="ex. 80">
+        </label>
+        <label class="field">Formule US Navy
+          <select id="input-sex">
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+          </select>
+        </label>
+        <span class="chart-hint">La taille est déduite de l'IMC de la balance ; elle sert au FFMI, aux ratios et à la silhouette.</span>
+      </div>
+
+      <!-- ===== Résumé ===== -->
+      <section class="section" id="section-summary">
+        <div class="section__head">
+          <h2>Résumé</h2>
+          <p>Valeurs actuelles et variation sur la période sélectionnée.</p>
+        </div>
+        <div class="grid grid--kpi" id="kpis"></div>
+        <div class="card" style="margin-top: var(--space-4)">
+          <div class="card__head"><h3>Analyse</h3></div>
+          <ul class="insights" id="insights"></ul>
+        </div>
+      </section>
+
+      <!-- ===== Poids ===== -->
+      <section class="section" id="section-weight">
+        <div class="section__head">
+          <h2>Poids</h2>
+          <p>Chaque pesée, la moyenne glissante sur 7 jours (qui lisse l'eau et le transit), la tendance linéaire et sa projection.</p>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h3>Évolution du poids</h3>
+                <p class="card__sub">Glisser pour zoomer · Ctrl + molette · Maj + glisser pour se déplacer</p>
+              </div>
+              <button type="button" class="btn" id="btn-reset-zoom">Réinitialiser le zoom</button>
+            </div>
+            <div class="chart-legend" id="lg-weight-main"></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-weight-main" aria-label="Évolution du poids"></canvas></div>
+          </div>
+        </div>
+        <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div class="card">
+            <div class="card__head"><div><h3>Variation cumulée</h3><p class="card__sub">kg depuis la première pesée de la période</p></div></div>
+            <div class="chart-box"><canvas id="c-weight-cumul"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>IMC</h3><p class="card__sub">Zones de l'OMS</p></div></div>
+            <div class="chart-box"><canvas id="c-bmi"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Variation d'une pesée à l'autre</h3><p class="card__sub">kg vs jour de pesée précédent</p></div></div>
+            <div class="chart-legend" id="lg-weight-dod"></div>
+            <div class="chart-box"><canvas id="c-weight-dod"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Variation hebdomadaire</h3><p class="card__sub">Moyenne de la semaine vs semaine précédente</p></div></div>
+            <div class="chart-box"><canvas id="c-weight-weekly"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Effet jour de la semaine</h3><p class="card__sub">Variation moyenne vs la veille (jours consécutifs)</p></div></div>
+            <div class="chart-box"><canvas id="c-weekday"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Heure de pesée</h3><p class="card__sub">Écart à la moyenne 7 j selon l'heure</p></div></div>
+            <div class="chart-box"><canvas id="c-weigh-time"></canvas></div>
+          </div>
+          <div class="card span-all">
+            <div class="card__head"><div><h3>Calendrier des pesées</h3><p class="card__sub">Régularité et sens de variation, jour par jour</p></div></div>
+            <div class="calendar" id="calendar"></div>
+            <div class="calendar__scale" id="calendar-scale"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Composition ===== -->
+      <section class="section" id="section-composition">
+        <div class="section__head">
+          <h2>Composition corporelle</h2>
+          <p>Mesures par impédancemétrie : à interpréter en tendance plutôt qu'au jour le jour.</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card span-2">
+            <div class="card__head"><div><h3>D'où vient la variation de poids ?</h3><p class="card__sub">Variation cumulée de chaque compartiment depuis la première pesée complète (kg)</p></div></div>
+            <div class="chart-legend" id="lg-comp-delta"></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-comp-delta"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Composition du poids</h3><p class="card__sub">Graisse + muscle + os = poids (kg)</p></div></div>
+            <div class="chart-legend" id="lg-comp-stack"></div>
+            <div class="chart-box"><canvas id="c-comp-stack"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Répartition départ vs actuel</h3><p class="card__sub">Part de chaque compartiment dans le poids</p></div></div>
+            <div class="chart-legend" id="lg-comp-split"></div>
+            <div class="chart-box"><canvas id="c-comp-split"></canvas></div>
+          </div>
+        </div>
+        <div class="grid grid--3" style="margin-top: var(--space-4)">
+          <div class="card"><div class="card__head"><div><h3>Masse grasse</h3><p class="card__sub">kg</p></div></div><div class="chart-box chart-box--short"><canvas id="c-fat-kg"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Graisse corporelle</h3><p class="card__sub">% du poids</p></div></div><div class="chart-box chart-box--short"><canvas id="c-fat-pct"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Gras sous-cutané</h3><p class="card__sub">%</p></div></div><div class="chart-box chart-box--short"><canvas id="c-subcut"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Muscle</h3><p class="card__sub">kg</p></div></div><div class="chart-legend" id="lg-muscle"></div><div class="chart-box chart-box--short"><canvas id="c-muscle"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Masse maigre</h3><p class="card__sub">Poids hors masse grasse, kg</p></div></div><div class="chart-box chart-box--short"><canvas id="c-lean"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>FFMI</h3><p class="card__sub">Indice de masse maigre (kg/m²)</p></div></div><div class="chart-legend" id="lg-ffmi"></div><div class="chart-box chart-box--short"><canvas id="c-ffmi"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Graisse viscérale</h3><p class="card__sub">Indice balance</p></div></div><div class="chart-box chart-box--short"><canvas id="c-visceral"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Eau corporelle</h3><p class="card__sub">%</p></div></div><div class="chart-box chart-box--short"><canvas id="c-water"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Protéines</h3><p class="card__sub">%</p></div></div><div class="chart-box chart-box--short"><canvas id="c-protein"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Masse osseuse</h3><p class="card__sub">kg</p></div></div><div class="chart-box chart-box--short"><canvas id="c-bone"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Métabolisme de base</h3><p class="card__sub">kcal / jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-bmr"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Âge métabolique</h3><p class="card__sub">ans</p></div></div><div class="chart-box chart-box--short"><canvas id="c-meta-age"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Mensurations ===== -->
+      <section class="section" id="section-measurements">
+        <div class="section__head">
+          <h2>Mensurations</h2>
+          <p>Tours mesurés au mètre ruban. Vert = baisse, rouge = hausse depuis le premier relevé de la période.</p>
+        </div>
+        <div class="grid grid--multiples" id="meas-multiples"></div>
+        <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div class="card span-2">
+            <div class="card__head">
+              <div><h3>Évolution par groupe</h3><p class="card__sub">cm</p></div>
+              <div class="segmented" id="meas-group-switch" role="group" aria-label="Groupe de zones"></div>
+            </div>
+            <div class="chart-legend" id="lg-meas-group"></div>
+            <div class="chart-box"><canvas id="c-meas-group"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Profil départ vs actuel</h3><p class="card__sub">Tours en cm</p></div></div>
+            <div class="chart-legend" id="lg-meas-radar"></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-meas-radar"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Variation par zone</h3><p class="card__sub">cm, premier vs dernier relevé</p></div></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-meas-delta"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Somme des tours</h3><p class="card__sub">Toutes zones additionnées, cm</p></div></div>
+            <div class="chart-box"><canvas id="c-meas-total"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Asymétrie gauche − droite</h3><p class="card__sub">cm ; positif = côté gauche plus gros</p></div></div>
+            <div class="chart-legend" id="lg-asym"></div>
+            <div class="chart-box"><canvas id="c-asym"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Tour de taille / taille</h3><p class="card__sub">Indicateur de risque cardio-métabolique</p></div></div>
+            <div class="chart-box"><canvas id="c-whtr"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Rapport taille / hanches</h3><p class="card__sub">Valeur de la balance et calcul</p></div></div>
+            <div class="chart-legend" id="lg-whr"></div>
+            <div class="chart-box"><canvas id="c-whr"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Morphologie (forme en V)</h3><p class="card__sub">Plus c'est haut, plus le haut du corps domine</p></div></div>
+            <div class="chart-legend" id="lg-shape"></div>
+            <div class="chart-box"><canvas id="c-shape"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>% de graisse : balance vs mètre ruban</h3><p class="card__sub">Formule US Navy à partir des tours</p></div></div>
+            <div class="chart-legend" id="lg-navy"></div>
+            <div class="chart-box"><canvas id="c-navy"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Silhouette ===== -->
+      <section class="section" id="section-silhouette">
+        <div class="section__head">
+          <h2>Silhouette</h2>
+          <p>Reconstruction de face à partir des tours mesurés (chaque tour est converti en largeur). Vue de face : ton côté gauche est à droite de l'écran.</p>
+        </div>
+        <div class="silhouette-layout">
+          <div class="card">
+            <div class="silhouette-controls">
+              <div class="segmented" id="sil-mode" role="group" aria-label="Mode d'affichage">
+                <button type="button" data-mode="overlay" aria-pressed="true">Superposition</button>
+                <button type="button" data-mode="compare" aria-pressed="false">Départ vs sélection</button>
+              </div>
+              <button type="button" class="btn" id="sil-play">▶ Lecture</button>
+              <div class="timeline-legend" id="sil-timeline-legend"></div>
+            </div>
+            <p class="card__sub" id="sil-caption"></p>
+            <svg class="silhouette-stage" id="sil-stage" role="img" aria-label="Silhouettes superposées"></svg>
+            <div class="silhouette-slider">
+              <input type="range" id="sil-slider" min="0" max="0" step="1" value="0" aria-label="Date du relevé">
+              <span class="silhouette-slider__date" id="sil-date"></span>
+            </div>
+          </div>
+          <div class="grid" style="align-content: start">
+            <div class="card">
+              <div class="card__head">
+                <div><h3>Carte des variations</h3><p class="card__sub">Silhouette sélectionnée colorée par variation relative de chaque zone</p></div>
+              </div>
+              <div class="timeline-legend" id="sil-heat-legend"></div>
+              <svg class="silhouette-stage silhouette-stage--small" id="sil-heat" role="img" aria-label="Carte des variations par zone"></svg>
+            </div>
+            <div class="card">
+              <div class="card__head"><h3>Détail chiffré</h3></div>
+              <div class="table-wrap" id="sil-detail"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top: var(--space-4)">
+          <div class="card__head"><div><h3>Chronologie</h3><p class="card__sub">Clique sur une date pour la sélectionner</p></div></div>
+          <div class="filmstrip" id="sil-film"></div>
+        </div>
+      </section>
+
+      <!-- ===== Données ===== -->
+      <section class="section" id="section-data">
+        <div class="section__head">
+          <h2>Données</h2>
+          <p>Valeurs brutes, de la plus récente à la plus ancienne. Vert = évolution favorable vs ligne précédente.</p>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="card__head"><h3>Mensurations</h3></div><div id="table-measurements"></div></div>
+          <div class="card"><div class="card__head"><h3>Pesées</h3></div><div id="table-composition"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Librairies (versions épinglées) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <!-- Noyau -->
+  <script src="js/core/namespace.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/state.js"></script>
+  <!-- Parsers -->
+  <script src="js/parsers/csvUtils.js"></script>
+  <script src="js/parsers/compositionParser.js"></script>
+  <script src="js/parsers/measurementsParser.js"></script>
+  <script src="js/parsers/fileDetector.js"></script>
+  <!-- Analyses -->
+  <script src="js/analysis/metrics.js"></script>
+  <script src="js/analysis/trends.js"></script>
+  <script src="js/analysis/insights.js"></script>
+  <!-- Graphiques -->
+  <script src="js/charts/chartTheme.js"></script>
+  <script src="js/charts/weightCharts.js"></script>
+  <script src="js/charts/compositionCharts.js"></script>
+  <script src="js/charts/measurementCharts.js"></script>
+  <script src="js/charts/calendarHeatmap.js"></script>
+  <!-- Silhouette -->
+  <script src="js/silhouette/bodyModel.js"></script>
+  <script src="js/silhouette/silhouetteRenderer.js"></script>
+  <script src="js/silhouette/silhouetteView.js"></script>
+  <!-- Interface -->
+  <script src="js/ui/tooltip.js"></script>
+  <script src="js/ui/dropzone.js"></script>
+  <script src="js/ui/templates.js"></script>
+  <script src="js/ui/kpiCards.js"></script>
+  <script src="js/ui/tables.js"></script>
+  <script src="js/ui/dateFilter.js"></script>
+  <!-- Application -->
+  <script src="js/app.js"></script>
+</body>
+</html>
