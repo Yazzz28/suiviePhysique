@@ -9,13 +9,14 @@
  *   retenue est la plus grande parmi celles imposées par chaque mesure, et la
  *   mesure « limitante » est indiquée.
  * - Hauts : la poitrine, mais aussi le ventre s'il est plus large.
- * - Pantalons : le tour de taille à l'endroit où le pantalon est porté
- *   (nombril ou taille naturelle) ET les hanches.
+ * - Pantalons homme : le tour de taille à l'endroit où le pantalon est porté
+ *   (taille naturelle par défaut, ou nombril) ; les hanches donnent un conseil.
+ *   Pantalons femme : tour de taille ET hanches (barèmes femme fondés sur les hanches).
  */
 (function (SP) {
   'use strict';
 
-  const { isFiniteNumber, clamp } = SP.core.utils;
+  const { fmt, isFiniteNumber, clamp } = SP.core.utils;
 
   /** Génère des tranches régulières : [{ label, min, max }]. */
   function steps(labels, firstMin, width) {
@@ -126,7 +127,7 @@
    * Recommandations pour un relevé.
    * Retourne une liste : { id, garment, size, alt, fit (résultat limitant), all, hints[] }.
    */
-  function recommend(m, { sex = 'male', heightCm, rise = 'navel' } = {}) {
+  function recommend(m, { sex = 'male', heightCm, rise = 'natural' } = {}) {
     if (!m) return [];
     const out = [];
     const waistForPants = pantsWaist(m, rise);
@@ -183,25 +184,32 @@
     ]);
     if (top) out.push({ id: 'top', garment: 'T-shirt, pull, sweat', size: top.limiting.fit.size.label, alt: '', ...top });
 
-    const pants = fitAll([
-      { chart: CHARTS.pantsWaistMen, value: waistForPants, label: `Tour de taille (${riseLabel})` },
-      { chart: CHARTS.pantsHipMen, value: m.hip, label: 'Hanches' },
-    ]);
+    // Pantalon homme : les guides homme sont organisés par tour de taille. Les hanches
+    // ne sont qu'un conseil : la ceinture ne suit pas un tour horizontal (elle passe
+    // souvent sous le ventre) et les tissus stretch absorbent l'écart.
+    const pants = fitAll([{ chart: CHARTS.pantsWaistMen, value: waistForPants, label: `Tour de taille (${riseLabel})` }]);
     if (pants) {
       const fr = Number(pants.limiting.fit.size.label);
       const inseam = inseamInches(heightCm);
-      out.push({ id: 'pants', garment: 'Pantalon', size: String(fr), alt: 'Taille française', ...pants });
-      const jeans = fitAll([
-        { chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` },
-        { chart: CHARTS.jeansHipMen, value: m.hip, label: 'Hanches' },
-      ]);
+      const hipFit = lookup(CHARTS.pantsHipMen, m.hip);
+      const hipHint = (sizeLabel) =>
+        hipFit && hipFit.index > pants.limiting.fit.index
+          ? [
+              `Hanches ${fmt(m.hip, 1)} cm (repère ${sizeLabel}) : si ça serre aux hanches ou aux cuisses, ` +
+                'prends une coupe athletic / tapered, du stretch, ou la taille au-dessus.',
+            ]
+          : [];
+      out.push({ id: 'pants', garment: 'Pantalon', size: String(fr), alt: 'Taille française', ...pants, hints: hipHint(hipFit ? hipFit.size.label : '') });
+      const jeans = fitAll([{ chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` }]);
       if (jeans) {
+        const jeansHip = lookup(CHARTS.jeansHipMen, m.hip);
         out.push({
           id: 'jeans',
           garment: 'Jean (taille US)',
           size: jeans.limiting.fit.size.label,
           alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
           ...jeans,
+          hints: hipHint(jeansHip ? jeansHip.size.label : ''),
         });
       }
     }
