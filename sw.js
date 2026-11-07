@@ -10,8 +10,9 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v1';
-const CACHE_NAME = `suivi-physique-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v2';
+const CACHE_PREFIX = 'suivi-physique-';
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
 /** Fichiers pré-chargés à l'installation (chemins relatifs à ce fichier). */
 const APP_FILES = [
@@ -75,7 +76,13 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      // Le Cache API est partagé par toute l'origine (yazzz28.github.io) :
+      // ne supprimer QUE les anciennes versions de cette app, jamais les caches des autres projets.
+      .then((keys) =>
+        Promise.all(
+          keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map((key) => caches.delete(key))
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
