@@ -23,14 +23,12 @@
     return labels.map((label, i) => ({ label: String(label), min: firstMin + i * width, max: firstMin + (i + 1) * width }));
   }
 
-  /** Tailles W26 à W50 : la taille Wn couvre [n + offset − 0,5 ; n + offset + 0,5[ pouces. */
-  function inchSizes(offset) {
-    const out = [];
-    for (let n = 26; n <= 50; n++) {
-      out.push({ label: `W${n}`, min: (n + offset - 0.5) * 2.54, max: (n + offset + 0.5) * 2.54 });
-    }
-    return out;
-  }
+  /**
+   * Taille de jean US (W) correspondant à une taille française de pantalon.
+   * Convention des marques (ex. étiquette Kiabi : 44 → US 34) : W = FR − 10.
+   * Le W est une étiquette conventionnelle, pas le tour de taille réel en pouces.
+   */
+  const toUS = (fr) => `W${Number(fr) - 10}`;
 
   const FR_MEN = [38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64];
   const FR_WOMEN = [34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54];
@@ -54,12 +52,6 @@
     // Pantalon femme : tour de taille et de hanches
     pantsWaistWomen: [...steps(FR_WOMEN.slice(0, 6), 62, 4), ...steps(FR_WOMEN.slice(6), 86, 6)],
     pantsHipWomen: [...steps(FR_WOMEN.slice(0, 6), 86, 4), ...steps(FR_WOMEN.slice(6), 110, 6)],
-    // Jean (taille US) : W = tour de taille en pouces, calculé directement depuis la mesure
-    // (la règle « FR − 10 » dérive dans les grandes tailles).
-    jeansWaist: inchSizes(0),
-    // Hanches d'un jean coupe droite ≈ W + 8 pouces (homme), W + 10 (femme)
-    jeansHipMen: inchSizes(8),
-    jeansHipWomen: inchSizes(10),
   };
 
   /** Lettre usuelle d'une taille FR femme. */
@@ -150,19 +142,14 @@
         const fr = Number(pants.limiting.fit.size.label);
         const inseam = inseamInches(heightCm);
         out.push({ id: 'pants', garment: 'Pantalon, jupe', size: String(fr), alt: `${WOMEN_LETTER[fr] || ''}`, ...pants });
-        const jeans = fitAll([
-          { chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` },
-          { chart: CHARTS.jeansHipWomen, value: m.hip, label: 'Hanches' },
-        ]);
-        if (jeans) {
-          out.push({
-            id: 'jeans',
-            garment: 'Jean (taille US)',
-            size: jeans.limiting.fit.size.label,
-            alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
-            ...jeans,
-          });
-        }
+        out.push({
+          id: 'jeans',
+          garment: 'Jean (taille US)',
+          size: toUS(fr),
+          alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
+          ...pants,
+          formatLabel: toUS,
+        });
       }
       if (top) {
         out.push({
@@ -199,19 +186,17 @@
                 'prends une coupe athletic / tapered, du stretch, ou la taille au-dessus.',
             ]
           : [];
-      out.push({ id: 'pants', garment: 'Pantalon', size: String(fr), alt: 'Taille française', ...pants, hints: hipHint(hipFit ? hipFit.size.label : '') });
-      const jeans = fitAll([{ chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` }]);
-      if (jeans) {
-        const jeansHip = lookup(CHARTS.jeansHipMen, m.hip);
-        out.push({
-          id: 'jeans',
-          garment: 'Jean (taille US)',
-          size: jeans.limiting.fit.size.label,
-          alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
-          ...jeans,
-          hints: hipHint(jeansHip ? jeansHip.size.label : ''),
-        });
-      }
+      const hipLabel = hipFit ? hipFit.size.label : '';
+      out.push({ id: 'pants', garment: 'Pantalon', size: String(fr), alt: 'Taille française', ...pants, hints: hipHint(hipLabel) });
+      out.push({
+        id: 'jeans',
+        garment: 'Jean (taille US)',
+        size: toUS(fr),
+        alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
+        ...pants,
+        formatLabel: toUS,
+        hints: hipHint(hipLabel ? toUS(hipLabel) : ''),
+      });
     }
 
     const shirt = fitAll([{ chart: CHARTS.collar, value: m.neck, label: 'Cou' }]);
