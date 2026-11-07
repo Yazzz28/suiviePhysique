@@ -7,10 +7,9 @@
 
   const { fmt, fmtDelta, fmtDate, daysBetween, isFiniteNumber, first, last } = SP.core.utils;
   const { trends, metrics } = SP.analysis;
+  const { ENERGY, RATE_WINDOW_DAYS } = SP.analysis.projection;
 
-  const KCAL_PER_KG_FAT = 7700;
-
-  function build({ composition, daily, measurements, settings }) {
+  function build({ composition, daily, measurements, settings, projection }) {
     const out = [];
     const push = (tone, icon, html) => out.push({ tone, icon, html });
 
@@ -54,14 +53,15 @@
           `(${fatPct} %) et ${fmtDelta(br.dLean, 1)} kg de masse maigre, dont ${fmtDelta(br.dWater, 1)} kg d'eau et ` +
           `${fmtDelta(br.dMuscle, 1)} kg de muscle.`
       );
-      const kcal = -br.dFat * KCAL_PER_KG_FAT;
+      // Énergie réellement perdue : gras (9 440 kcal/kg) + masse maigre (1 816 kcal/kg)
+      const kcal = -br.dFat * ENERGY.fatKcalPerKg - br.dLean * ENERGY.leanKcalPerKg;
       const days = Math.max(1, daysBetween(br.from.date, br.to.date));
       if (kcal > 0) {
         push(
           'info',
           '🔥',
-          `Le gras perdu représente environ <strong>${fmt(kcal, 0)} kcal</strong>, soit un déficit moyen ` +
-            `d'environ ${fmt(kcal / days, 0)} kcal/jour.`
+          `L'énergie perdue (gras + masse maigre) représente environ <strong>${fmt(kcal, 0)} kcal</strong>, ` +
+            `soit un déficit moyen d'environ ${fmt(kcal / days, 0)} kcal/jour sur la période.`
         );
       }
     }
@@ -79,17 +79,40 @@
       );
     }
 
-    // --- Projection objectif
-    if (global && isFiniteNumber(settings.targetWeight) && w1) {
-      const proj = trends.projectTarget(global, w1.date, settings.targetWeight);
-      if (proj) {
+    // --- Projection (bilan énergétique, non linéaire)
+    if (projection) {
+      const halfLife = Math.round(projection.tau * Math.LN2);
+      push(
+        'info',
+        '⚖',
+        `Déficit actuel estimé : <strong>≈ ${fmt(projection.deficit, 0)} kcal/jour</strong> (rythme des ${RATE_WINDOW_DAYS} derniers jours). ` +
+          `Chaque kg perdu réduit ta dépense d'environ ${fmt(projection.expenditureDropPerKg, 0)} kcal/jour ` +
+          `(dont ≈ ${fmt(projection.bmrSlope, 0)} via le métabolisme de base${projection.bmrMeasured ? ' mesuré par ta balance' : ''}) : ` +
+          `à apport constant, la perte ralentit et la moitié du chemin restant vers l'équilibre théorique ` +
+          `(≈ ${fmt(projection.plateau, 0)} kg) serait parcourue en ≈ ${halfLife} jours.`
+      );
+    }
+    if (isFiniteNumber(settings.targetWeight) && w1) {
+      const target = projection ? projection.dateFor(settings.targetWeight) : null;
+      if (target) {
+        const linearDays = projection.linearDaysTo(settings.targetWeight);
         push(
           'info',
           '⚑',
-          `Au rythme actuel, objectif de <strong>${fmt(settings.targetWeight, 1)} kg</strong> atteint vers le ` +
-            `<strong>${fmtDate(proj.date, 'long')}</strong> (≈ ${Math.round(proj.days)} jours).`
+          `À apport constant, objectif de <strong>${fmt(settings.targetWeight, 1)} kg</strong> atteint vers le ` +
+            `<strong>${fmtDate(target.date, 'long')}</strong> (≈ ${Math.round(target.days)} jours)` +
+            (linearDays
+              ? `, soit ${Math.round(target.days - linearDays)} jours de plus qu'en gardant le rythme actuel sans ralentissement.`
+              : '.')
         );
-      } else {
+      } else if (projection && settings.targetWeight < projection.w0) {
+        push(
+          'warn',
+          '⚑',
+          `À apport constant, le poids se stabiliserait vers ${fmt(projection.plateau, 0)} kg, au-dessus de l'objectif de ` +
+            `${fmt(settings.targetWeight, 1)} kg : il faudra réduire encore l'apport ou augmenter l'activité.`
+        );
+      } else if (!projection) {
         push('warn', '⚑', `La tendance actuelle ne mène pas à l'objectif de ${fmt(settings.targetWeight, 1)} kg.`);
       }
     }
@@ -146,5 +169,5 @@
     return out;
   }
 
-  SP.analysis.insights = { build, KCAL_PER_KG_FAT };
+  SP.analysis.insights = { build };
 })(window.SP);

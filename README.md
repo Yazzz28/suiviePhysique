@@ -35,10 +35,10 @@ Formats acceptés : séparateur `;` ou `,`, décimales `89,9` ou `89.9`, dates `
 ## Ce que l'app affiche
 
 - **Résumé** : indicateurs clés et analyse rédigée (rythme, composition de la perte, projection vers un objectif, assiduité).
-- **Poids** : courbe avec moyenne 7 jours, tendance et projection, IMC, variations quotidiennes et hebdomadaires, effet du jour de la semaine, heure de pesée, calendrier.
+- **Poids** : courbe avec moyenne 7 jours, tendance et projection non linéaire (bilan énergétique : la perte ralentit à mesure que la dépense baisse, ≈ 22 kcal/j par kg perdu d'après Hall et al., Lancet 2011), IMC, variations quotidiennes et hebdomadaires, effet du jour de la semaine, heure de pesée, calendrier.
 - **Composition** : origine de la variation de poids (graisse / muscle / eau), répartition, masse grasse, muscle, masse maigre, FFMI, graisse viscérale, eau, protéines, os, métabolisme.
 - **Mensurations** : évolution de chaque zone, profil radar, variations, asymétries gauche/droite, ratios (taille/hauteur, taille/hanches, forme en V), estimation US Navy du % de graisse.
-- **Silhouette** : reconstruction de face à partir des tours, superposition de toutes les dates, comparaison départ/sélection annotée, carte de chaleur des variations et animation dans le temps.
+- **Silhouette** : reconstruction de face à partir des tours (squelette commun à toutes les dates : seule l'épaisseur des tissus varie), superposition de toutes les dates, comparaison départ/sélection annotée, carte de chaleur des variations et animation dans le temps.
 - **Données** : tableaux bruts.
 
 Un filtre de période (tout / 90 / 30 / 14 / 7 jours) et un thème clair/sombre sont disponibles.

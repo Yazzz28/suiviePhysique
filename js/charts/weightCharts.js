@@ -4,14 +4,14 @@
 (function (SP) {
   'use strict';
 
-  const { fmt, fmtDelta, fmtDate, rollingMean, withAlpha, isFiniteNumber, DAY_MS } = SP.core.utils;
+  const { fmt, fmtDelta, fmtDate, rollingMean, withAlpha, isFiniteNumber } = SP.core.utils;
   const { trends } = SP.analysis;
   const theme = SP.charts.theme;
 
   const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   /** Courbe principale : pesées, moyenne 7 j, tendance, projection, objectif. */
-  function renderMain({ composition, daily, settings }) {
+  function renderMain({ composition, daily, settings, projection }) {
     const t = theme.tokens();
     const pts = composition.filter((r) => isFiniteNumber(r.weight));
     if (!pts.length) return;
@@ -47,11 +47,6 @@
     ];
 
     if (tr) {
-      let endMs = maxMs;
-      const proj = trends.projectTarget(tr, lastDate, settings.targetWeight);
-      if (proj && proj.days <= 365) endMs = proj.date.getTime();
-      else if (tr.slopePerDay < 0) endMs = maxMs + 21 * DAY_MS;
-      maxMs = Math.max(maxMs, endMs);
       datasets.push({
         label: 'Tendance',
         data: [
@@ -63,22 +58,25 @@
         tension: 0,
         order: 3,
       });
-      if (endMs > lastDate.getTime()) {
-        datasets.push({
-          label: 'Projection',
-          data: [
-            { x: lastDate.getTime(), y: tr.at(lastDate) },
-            { x: endMs, y: tr.at(new Date(endMs)) },
-          ],
-          borderColor: t.textSecondary,
-          borderWidth: 1.5,
-          borderDash: [5, 4],
-          tension: 0,
-          order: 3,
-        });
-      }
-      legend.push({ label: `Tendance (${fmtDelta(tr.slopePerWeek, 2)} kg/sem.)`, color: t.textSecondary });
-      legend.push({ label: 'Projection', color: t.textSecondary, dashed: true });
+      legend.push({ label: `Tendance linéaire observée (${fmtDelta(tr.slopePerWeek, 2)} kg/sem.)`, color: t.textSecondary });
+    }
+
+    // Projection non linéaire : bilan énergétique à apport constant (voir analysis/projection.js)
+    if (projection) {
+      const target = projection.dateFor(settings.targetWeight);
+      const horizon = target ? Math.min(365, Math.max(21, target.days * 1.15)) : 90;
+      const curve = projection.curve(Math.ceil(horizon));
+      maxMs = Math.max(maxMs, curve[curve.length - 1].x);
+      datasets.push({
+        label: 'Projection',
+        data: curve,
+        borderColor: t.textSecondary,
+        borderWidth: 1.5,
+        borderDash: [5, 4],
+        tension: 0,
+        order: 3,
+      });
+      legend.push({ label: 'Projection (bilan énergétique)', color: t.textSecondary, dashed: true });
     }
 
     if (isFiniteNumber(settings.targetWeight)) {

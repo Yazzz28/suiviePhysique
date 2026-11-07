@@ -10,7 +10,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -41,6 +41,7 @@ const APP_FILES = [
   'js/parsers/fileDetector.js',
   'js/analysis/metrics.js',
   'js/analysis/trends.js',
+  'js/analysis/projection.js',
   'js/analysis/insights.js',
   'js/charts/chartTheme.js',
   'js/charts/weightCharts.js',

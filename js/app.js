@@ -48,9 +48,11 @@
     const v = state.view();
     const { heightCm, sex } = v.settings;
     const composition = metrics.enrichComposition(v.composition, heightCm);
+    const daily = metrics.dailyAverages(composition);
     return {
       composition,
-      daily: metrics.dailyAverages(composition),
+      daily,
+      projection: SP.analysis.projection.build({ daily, composition }),
       measurements: metrics.enrichMeasurements(v.measurements, heightCm, sex),
       settings: v.settings,
       period: v.period,

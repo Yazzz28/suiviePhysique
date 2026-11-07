@@ -46,7 +46,7 @@
     </div>`;
   }
 
-  function render(host, { composition, daily, measurements, settings }) {
+  function render(host, { composition, daily, measurements, settings, projection }) {
     const html = [];
     DEFS.forEach((def) => {
       const list = def.src === 'composition' ? composition : measurements;
@@ -79,13 +79,12 @@
 
     // Objectif
     if (isFiniteNumber(settings.targetWeight)) {
-      const tr = trends.trend(daily, 'weight');
       const lw = last(composition, 'weight');
-      const proj = tr && lw ? trends.projectTarget(tr, lw.date, settings.targetWeight) : null;
+      const proj = projection ? projection.dateFor(settings.targetWeight) : null;
       html.push(
         `<div class="card kpi"><span class="kpi__label">Objectif ${fmt(settings.targetWeight, 1)} kg</span>
           <span class="kpi__value">${lw ? fmt(lw.weight - settings.targetWeight, 1) : '—'}<span class="kpi__unit">kg restants</span></span>
-          <span class="kpi__meta">${proj ? 'Projection : ' + fmtDate(proj.date, 'long') : 'Pas de projection possible'}</span></div>`
+          <span class="kpi__meta">${proj ? 'Projection : ' + fmtDate(proj.date, 'long') : projection ? `Plateau estimé ≈ ${fmt(projection.plateau, 0)} kg` : 'Pas de projection possible'}</span></div>`
       );
     }
 

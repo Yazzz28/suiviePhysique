@@ -214,7 +214,8 @@
     }
     bind();
     const filled = model.fillGaps(measurements);
-    view.geoms = filled.map((m) => model.build(m, heightCm));
+    const ref = model.reference(filled); // squelette commun : seuls les tissus varient
+    view.geoms = filled.map((m) => model.build(m, heightCm, ref));
     view.selected = view.geoms.length - 1;
     const slider = $('sil-slider');
     slider.max = String(view.geoms.length - 1);

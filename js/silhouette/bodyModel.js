@@ -95,20 +95,38 @@
   }
 
   /**
-   * Points d'un côté (sign = +1 : côté gauche de la personne, à droite à l'écran),
-   * du cou jusqu'à l'entrejambe.
+   * Référence « squelette » : maximum de chaque tour sur tous les relevés.
+   * Les axes des bras et des jambes sont calculés une seule fois à partir de
+   * cette référence, puis partagés par toutes les dates : le squelette ne bouge
+   * pas, seule l'épaisseur des tissus varie. Sans cela, l'amincissement du tronc
+   * rapprochait les bras du corps et l'ancien bras « ressortait » à l'extérieur.
    */
-  function sidePoints(m, H, sign) {
+  function reference(records) {
+    const ref = {};
+    CM_ZONES.forEach(({ key }) => {
+      const values = records.map((r) => r[key]).filter(isFiniteNumber);
+      ref[key] = values.length ? Math.max(...values) : null;
+    });
+    return ref;
+  }
+
+  /**
+   * Points d'un côté (sign = +1 : côté gauche de la personne, à droite à l'écran),
+   * du cou jusqu'à l'entrejambe. `ref` fixe la position des membres.
+   */
+  function sidePoints(m, H, sign, ref) {
     const side = sign > 0 ? 'L' : 'R';
     const W = torsoWidths(m);
+    const Wref = torsoWidths(ref);
     const y = (f) => H * (1 - f);
     const P = (x, f) => [sign * x, y(f)];
 
-    // --- Jambes
+    // --- Jambes : axe fixé par la référence, épaisseur du relevé
     const thighC = m['thigh' + side];
     const calfC = m['calf' + side];
     const thighA = thighC / (Math.PI * 1.9);
-    const legCx = Math.max(thighA * 0.55, W.hip - thighA * 0.92);
+    const thighRefA = ref['thigh' + side] / (Math.PI * 1.9);
+    const legCx = Math.max(thighRefA * 0.55, Wref.hip - thighRefA * 0.92);
     const kneeCx = legCx * 0.8;
     const calfCx = legCx * 0.78;
     const ankleCx = legCx * 0.74;
@@ -116,31 +134,32 @@
     const kneeR = calfR * 0.8;
     const ankleR = Math.max(2.6, calfR * 0.48);
 
-    // Profil du tronc (pour dégager les bras)
+    // Profil du tronc de référence (le plus large) : les bras le dégagent à toutes les dates
     const torsoStops = [
-      [F.armpit, W.chest * 0.98],
-      [F.chest, W.chest],
-      [F.waist, W.waist],
-      [F.abdomen, W.abdomen],
-      [F.hip, W.hip],
-      [F.crotch, Math.max(W.hip * 0.98, legCx + thighA * 0.98)],
-      [F.thigh, legCx + thighA],
+      [F.armpit, Wref.chest * 0.98],
+      [F.chest, Wref.chest],
+      [F.waist, Wref.waist],
+      [F.abdomen, Wref.abdomen],
+      [F.hip, Wref.hip],
+      [F.crotch, Math.max(Wref.hip * 0.98, legCx + thighRefA * 0.98)],
+      [F.thigh, legCx + thighRefA],
     ];
 
     // --- Bras en deux segments : bras incliné juste assez pour dégager le tronc,
     //     avant-bras le plus vertical possible (pose en « A » légère).
-    const bicepsR = radius(m['biceps' + side]);
-    const armR = {
-      deltoid: bicepsR * 1.12,
-      biceps: bicepsR,
-      elbow: bicepsR * 0.74,
-      forearm: bicepsR * 0.86,
-      wrist: bicepsR * 0.52,
-      hand: bicepsR * 0.66,
-    };
-    const jointX = W.shoulder - bicepsR * 0.95;
+    const armRadii = (r) => ({
+      deltoid: r * 1.12,
+      biceps: r,
+      elbow: r * 0.74,
+      forearm: r * 0.86,
+      wrist: r * 0.52,
+      hand: r * 0.66,
+    });
+    const armR = armRadii(radius(m['biceps' + side])); // épaisseur dessinée (relevé)
+    const armRef = armRadii(radius(ref['biceps' + side])); // gabarit pour placer l'axe
+    const jointX = Wref.shoulder - armRef.biceps * 0.95;
     const jointF = F.shoulder;
-    const need = (part, f, gap) => torsoHalfAt(torsoStops, f) + armR[part] + gap;
+    const need = (part, f, gap) => torsoHalfAt(torsoStops, f) + armRef[part] + gap;
 
     let upperSlope = 6; // cm d'écart latéral par unité de fraction de hauteur
     [['biceps', F.biceps, 0.8], ['elbow', F.elbow, 1.4]].forEach(([part, f, gap]) => {
@@ -210,12 +229,12 @@
     return { points, levels, armInnerAt: (f) => sign * (axis(f) - armR.biceps) };
   }
 
-  /** Géométrie complète d'un relevé. */
-  function build(m, heightCm) {
+  /** Géométrie complète d'un relevé. `ref` (voir reference()) fixe le squelette. */
+  function build(m, heightCm, ref = m) {
     const H = heightCm;
     const W = torsoWidths(m);
-    const left = sidePoints(m, H, 1); // côté gauche de la personne (x > 0)
-    const right = sidePoints(m, H, -1);
+    const left = sidePoints(m, H, 1, ref); // côté gauche de la personne (x > 0)
+    const right = sidePoints(m, H, -1, ref);
 
     // Tête : ellipse fixe, raccordée au cou
     const head = { cx: 0, cy: H * (1 - F.headCenter), rx: H * 0.048, ry: H * 0.066 };
@@ -254,5 +273,5 @@
     };
   }
 
-  SP.silhouette.model = { build, fillGaps, interpolate, F };
+  SP.silhouette.model = { build, reference, fillGaps, interpolate, F };
 })(window.SP);
