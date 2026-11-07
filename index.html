@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/charts.css">
+  <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
 
@@ -38,6 +39,10 @@
       </div>
     </div>
     <div class="app-header__actions">
+      <button type="button" class="btn hidden" id="btn-report" title="Imprimer ou enregistrer en PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>
+        <span class="btn__label">Rapport PDF</span>
+      </button>
       <button type="button" class="btn hidden" id="btn-reload">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16"/></svg>
         <span class="btn__label">Charger d'autres fichiers</span>
@@ -115,6 +120,9 @@
     </nav>
 
     <main class="app-main">
+      <!-- Page de garde du rapport imprimable (remplie par js/ui/printReport.js) -->
+      <section class="report-cover" id="report-cover"></section>
+
 
       <!-- Réglages (en mémoire uniquement) -->
       <div class="toolbar">
@@ -138,6 +146,10 @@
         <div class="section__head">
           <h2>Résumé</h2>
           <p>Valeurs actuelles et variation sur la période sélectionnée.</p>
+        </div>
+        <div class="card reading" style="margin-bottom: var(--space-4)">
+          <div class="card__head"><div><h3>Lecture du jour</h3><p class="card__sub">Ta dernière pesée comparée à ta tendance et à ta fluctuation normale</p></div></div>
+          <div id="daily-reading"></div>
         </div>
         <div class="grid grid--kpi" id="kpis"></div>
         <div class="card" style="margin-top: var(--space-4)">
@@ -167,7 +179,7 @@
             <div class="card__head">
               <div>
                 <h3>Évolution du poids</h3>
-                <p class="card__sub">Glisser pour zoomer · Ctrl + molette · Maj + glisser pour se déplacer</p>
+                <p class="card__sub no-print">Glisser pour zoomer · Ctrl + molette · Maj + glisser pour se déplacer</p>
               </div>
               <button type="button" class="btn" id="btn-reset-zoom">Réinitialiser le zoom</button>
             </div>
@@ -409,7 +421,7 @@
           </div>
           <div class="card">
             <div class="card__head">
-              <div><h3>Avant / après</h3><p class="card__sub">Fais glisser le curseur : premier relevé à gauche, relevé sélectionné à droite</p></div>
+              <div><h3>Avant / après</h3><p class="card__sub">Premier relevé à gauche, relevé sélectionné à droite<span class="no-print"> : fais glisser le curseur</span></p></div>
               <button type="button" class="btn" data-export="sil-split" data-filename="silhouette-avant-apres.png"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg> PNG</button>
             </div>
             <svg class="silhouette-stage silhouette-stage--small" id="sil-split" role="img" aria-label="Comparaison avant après"></svg>
@@ -419,7 +431,7 @@
           </div>
         </div>
         <div class="card" style="margin-top: var(--space-4)">
-          <div class="card__head"><div><h3>Chronologie</h3><p class="card__sub">Clique sur une date pour la sélectionner</p></div></div>
+          <div class="card__head"><div><h3>Chronologie</h3><p class="card__sub">Silhouette de chaque relevé<span class="no-print"> : clique sur une date pour la sélectionner</span></p></div></div>
           <div class="filmstrip" id="sil-film"></div>
         </div>
       </section>
@@ -458,6 +470,7 @@
   <script src="js/analysis/projection.js"></script>
   <script src="js/analysis/quality.js"></script>
   <script src="js/analysis/milestones.js"></script>
+  <script src="js/analysis/dailyReading.js"></script>
   <script src="js/analysis/insights.js"></script>
   <!-- Graphiques -->
   <script src="js/charts/chartTheme.js"></script>
@@ -481,6 +494,8 @@
   <script src="js/ui/kpiCards.js"></script>
   <script src="js/ui/tables.js"></script>
   <script src="js/ui/summaryPanels.js"></script>
+  <script src="js/ui/dailyReadingCard.js"></script>
+  <script src="js/ui/printReport.js"></script>
   <script src="js/ui/dateFilter.js"></script>
   <!-- Application -->
   <script src="js/app.js"></script>

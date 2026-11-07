@@ -110,6 +110,17 @@
   };
 
   let registered = false;
+  let printMode = false;
+  let screenPixelRatio = null;
+
+  /**
+   * Mode impression : pas d'animation (tout est dessiné immédiatement, avant
+   * l'impression) et résolution doublée pour des graphiques nets en PDF.
+   */
+  function setPrintMode(on) {
+    printMode = on;
+  }
+
   function applyDefaults() {
     if (!window.Chart) return;
     const t = tokens();
@@ -123,7 +134,9 @@
     C.defaults.color = t.muted;
     C.defaults.borderColor = t.grid;
     C.defaults.maintainAspectRatio = false;
-    C.defaults.animation.duration = 350;
+    C.defaults.animation.duration = printMode ? 0 : 350;
+    if (screenPixelRatio === null) screenPixelRatio = C.defaults.devicePixelRatio;
+    C.defaults.devicePixelRatio = printMode ? 2 : screenPixelRatio;
     C.defaults.elements.line.borderWidth = 2;
     C.defaults.elements.line.tension = 0.25;
     C.defaults.elements.line.cubicInterpolationMode = 'monotone'; // jamais de dépassement entre deux points
@@ -240,6 +253,7 @@
   }
 
   SP.charts.theme = {
+    setPrintMode,
     tokens,
     colorFor,
     applyDefaults,

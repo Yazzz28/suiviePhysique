@@ -205,14 +205,14 @@
   function pushStagnation(push, daily) {
     const s = milestones.stagnation(daily);
     if (!s || !s.stalled) return;
-    let detail = '';
-    if (isFiniteNumber(s.fatDelta) && isFiniteNumber(s.waterDelta)) {
-      detail =
-        s.fatDelta < -0.2 && s.waterDelta > 0.2
-          ? ` La masse grasse continue pourtant de baisser (${fmtDelta(s.fatDelta, 1)} kg) et l'eau monte (${fmtDelta(s.waterDelta, 1)} point) : probablement de la <strong>rétention d'eau</strong>, la perte devrait réapparaître.`
-          : s.fatDelta >= -0.2
-            ? ` La masse grasse ne baisse plus non plus (${fmtDelta(s.fatDelta, 1)} kg) : <strong>vrai plateau</strong> probable, l'apport ou l'activité est à réajuster.`
-            : '';
+    // Pas de diagnostic « rétention d'eau » : le % d'eau de la balance monte
+    // mécaniquement quand le % de gras baisse, ce n'est pas un indicateur fiable.
+    let detail = ' Une stagnation de 1 à 2 semaines est fréquente (eau, transit, cycle de sommeil) et se débloque souvent seule.';
+    if (isFiniteNumber(s.fatDelta)) {
+      detail +=
+        s.fatDelta < -0.2
+          ? ` La balance indique que la masse grasse baisse encore (${fmtDelta(s.fatDelta, 1)} kg) : plutôt bon signe.`
+          : ` La masse grasse ne baisse plus non plus (${fmtDelta(s.fatDelta, 1)} kg selon la balance) : si ça dure au-delà de 2 semaines, l'apport ou l'activité est à réajuster.`;
     }
     push(
       'warn',

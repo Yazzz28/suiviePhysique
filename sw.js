@@ -10,7 +10,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v13';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -24,6 +24,7 @@ const APP_FILES = [
   'css/layout.css',
   'css/components.css',
   'css/charts.css',
+  'css/print.css',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -44,6 +45,7 @@ const APP_FILES = [
   'js/analysis/projection.js',
   'js/analysis/quality.js',
   'js/analysis/milestones.js',
+  'js/analysis/dailyReading.js',
   'js/analysis/insights.js',
   'js/charts/chartTheme.js',
   'js/charts/weightCharts.js',
@@ -64,6 +66,8 @@ const APP_FILES = [
   'js/ui/kpiCards.js',
   'js/ui/tables.js',
   'js/ui/summaryPanels.js',
+  'js/ui/dailyReadingCard.js',
+  'js/ui/printReport.js',
   'js/ui/dateFilter.js',
   'js/app.js',
   'js/pwa.js',

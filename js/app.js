@@ -31,6 +31,7 @@
     $('welcome').classList.toggle('hidden', visible);
     $('dashboard').classList.toggle('hidden', !visible);
     $('btn-reload').classList.toggle('hidden', !visible);
+    $('btn-report').classList.toggle('hidden', !visible);
     window.scrollTo({ top: 0 });
   }
 
@@ -95,6 +96,7 @@
     toggleSection('silhouette', hasMeas);
 
     renderSubtitle(ctx);
+    safe('lecture du jour', () => SP.ui.dailyReadingCard.render($('daily-reading'), SP.analysis.dailyReading.read(ctx.allDaily)));
     safe('kpi', () => SP.ui.kpiCards.render($('kpis'), ctx));
     safe('insights', () => renderInsights(ctx));
     safe('jalons', () => SP.ui.summaryPanels.renderMilestones($('milestones'), ctx.records));
@@ -218,6 +220,7 @@
     SP.ui.templates.bind($('welcome'));
     SP.ui.dateFilter.bind($('period-filter'));
     $('btn-reload').addEventListener('click', reset);
+    SP.ui.printReport.bind($('btn-report'));
     bindSettings();
     bindThemeToggle();
     bindNavHighlight();
@@ -227,6 +230,9 @@
       if (state.get().files.length) renderAll();
     });
   }
+
+  // API minimale pour les modules qui doivent redessiner la page (rapport imprimable)
+  SP.app = { renderAll };
 
   document.addEventListener('DOMContentLoaded', init);
 })(window.SP);

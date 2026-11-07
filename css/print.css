@@ -1,0 +1,102 @@
+/* =========================================================
+   Rapport imprimable / PDF
+   Activé par la classe `is-printing` sur <html> (js/ui/printReport.js),
+   posée AVANT l'impression : les graphiques sont redessinés à la largeur
+   réelle de la page A4. Toute nouvelle section du tableau de bord apparaît
+   automatiquement dans le rapport ; ajouter `no-print` aux contrôles à masquer.
+   ========================================================= */
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+/* ---- Éléments masqués ---- */
+.report-cover { display: none; }
+
+.is-printing .app-nav,
+.is-printing .app-header,
+.is-printing .welcome,
+.is-printing .toolbar,
+.is-printing .btn,
+.is-printing .segmented,
+.is-printing .silhouette-slider,
+.is-printing .update-banner,
+.is-printing .viz-tooltip,
+.is-printing .field,
+.is-printing .no-print {
+  display: none !important;
+}
+
+/* ---- Page : largeur de la zone imprimable A4 (186 mm ≈ 700 px) ---- */
+.is-printing body {
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.is-printing .app-main {
+  max-width: 700px;
+  padding: 0;
+  margin: 0 auto;
+}
+
+/* ---- Page de garde ---- */
+.is-printing .report-cover {
+  display: block;
+  break-after: page;
+  padding-top: 40mm;
+}
+
+.report-cover h1 { font-size: 28px; margin-bottom: 8px; }
+.report-cover h2 { font-size: 16px; margin: 24px 0 8px; }
+.report-cover__meta { color: var(--text-secondary); margin: 4px 0; }
+.report-cover__toc { line-height: 1.9; padding-left: 20px; }
+.report-cover__note { margin-top: 32px; font-size: 11px; color: var(--text-muted); }
+
+/* ---- Sections et cartes ---- */
+.is-printing .section {
+  padding: 0;
+  border-top: 0;
+}
+
+.is-printing .section + .section { break-before: page; }
+
+.is-printing .section__head { margin-bottom: 10px; }
+
+.is-printing .card {
+  box-shadow: none;
+  break-inside: avoid;
+  padding: 10px 12px 12px;
+}
+
+.is-printing .grid { gap: 10px; }
+
+/* ---- Grilles resserrées pour la largeur A4 ---- */
+.is-printing .grid--kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.is-printing .grid--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.is-printing .grid--multiples { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.is-printing .silhouette-layout { grid-template-columns: minmax(0, 1fr); }
+.is-printing .span-2 { grid-column: 1 / -1; }
+
+.is-printing .chart-box--tall { height: 300px; }
+.is-printing .silhouette-stage { height: 520px; }
+.is-printing .silhouette-stage--small { height: 420px; }
+
+/* ---- Tableaux : affichés en entier ---- */
+.is-printing .table-scroll { max-height: none; overflow: visible; }
+.is-printing .table-wrap { overflow: visible; }
+/* Tableaux larges : colonnes réparties sur la largeur de la page, en-têtes sur plusieurs lignes */
+.is-printing .data-table { font-size: 8px; table-layout: fixed; width: 100%; }
+.is-printing .data-table th,
+.is-printing .data-table td { padding: 3px 2px; white-space: normal; hyphens: auto; overflow-wrap: break-word; position: static; }
+.is-printing .data-table th:first-child,
+.is-printing .data-table td:first-child { width: 52px; }
+.is-printing .matrix { font-size: 9px; }
+.is-printing .matrix__cell { min-width: 0; padding: 4px 2px; }
+.is-printing .filmstrip { flex-wrap: wrap; overflow: visible; }
+
+/* Couleurs de fond conservées à l'impression (zones, heatmaps, barres) */
+.is-printing * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}

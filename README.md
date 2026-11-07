@@ -34,12 +34,15 @@ Formats acceptés : séparateur `;` ou `,`, décimales `89,9` ou `89.9`, dates `
 
 ## Ce que l'app affiche
 
-- **Résumé** : indicateurs clés, jauge de progression vers l'objectif, analyse rédigée (rythme en kg et en % du poids, composition de la perte et alerte de perte musculaire sur 4 semaines, stagnation avec distinction rétention d'eau / vrai plateau, déficit estimé, projection et fourchette de dates, prochain jalon, assiduité), jalons (records, paliers de 5 kg, catégories d'IMC franchies et prévues) et bilan mensuel.
+- **Lecture du jour** : la dernière pesée comparée à la tendance des 21 jours précédents et à la fluctuation normale, avec une interprétation et la fourchette normale pour le lendemain.
+- **Résumé** : indicateurs clés, jauge de progression vers l'objectif, analyse rédigée (rythme en kg et en % du poids, composition de la perte et alerte de perte musculaire sur 4 semaines, détection de stagnation, déficit estimé, projection et fourchette de dates, prochain jalon, assiduité), jalons (records, paliers de 5 kg, catégories d'IMC franchies et prévues) et bilan mensuel.
 - **Poids** : courbe avec moyenne 7 jours, tendance observée et projection non linéaire avec fourchette probable (bilan énergétique : la perte ralentit à mesure que la dépense baisse, ≈ 22 kcal/j par kg perdu d'après Hall et al., Lancet 2011), déficit calorique estimé, vitesse de perte observée vs attendue, rythme en % du poids par semaine (zone conseillée 0,5-1 %), IMC, variations quotidiennes et hebdomadaires, distribution des variations, effet du jour de la semaine, heure de pesée, calendrier.
 - **Composition** : origine de la variation de poids (graisse / muscle / eau), répartition, trajectoire gras / maigre, carte FMI × FFMI (Kelly 2009), part de gras dans la perte, masse grasse, muscle, masse maigre, FFMI, graisse viscérale, eau, protéines, os, métabolisme.
 - **Mensurations** : détection des mesures douteuses (tendance robuste de Theil-Sen, valeurs exclues des graphiques au choix), évolution de chaque zone, matrice des variations zones × dates, profil radar, variations, cm perdus par kg perdu, asymétries gauche/droite, ratios (taille/hauteur, taille/hanches, forme en V), BRI et ABSI, estimation US Navy du % de graisse.
 - **Silhouette** : reconstruction de face et de profil (courbes du dos, fessiers, bras) à partir des tours (squelette commun à toutes les dates : seule l'épaisseur des tissus varie), superposition de toutes les dates, comparaison annotée, avant / après à curseur, carte de chaleur des variations, animation dans le temps et export PNG.
 - **Données** : tableaux bruts.
+
+**Rapport imprimable / PDF** : bouton « Rapport PDF » (ou Ctrl+P), puis « Enregistrer en PDF ». Le rapport est le tableau de bord lui-même mis en page pour l'A4 (page de garde, sommaire, thème clair, graphiques redessinés en haute résolution) : toute nouvelle section y figure automatiquement. Pour masquer un contrôle à l'impression, lui ajouter la classe `no-print` (voir `css/print.css`).
 
 Un filtre de période (tout / 90 / 30 / 14 / 7 jours) et un thème clair/sombre sont disponibles.
 

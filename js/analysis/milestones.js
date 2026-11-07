@@ -89,15 +89,10 @@
     const last = series[series.length - 1];
     const days = daysBetween(best.date, last.date);
 
-    // Distinguer rétention d'eau et vrai plateau : évolution eau % et gras % depuis le plus bas
+    // Évolution de la masse grasse (balance) depuis le plus bas
     const since = daily.filter((d) => d.date >= best.date && d.hasComposition);
-    let water = null;
-    let fat = null;
-    if (since.length >= 2) {
-      water = since[since.length - 1].waterPct - since[0].waterPct;
-      fat = since[since.length - 1].fatKg - since[0].fatKg;
-    }
-    return { days, since: best.date, lowest: best.w, stalled: days >= STAGNATION_DAYS, waterDelta: water, fatDelta: fat };
+    const fat = since.length >= 2 ? since[since.length - 1].fatKg - since[0].fatKg : null;
+    return { days, since: best.date, lowest: best.w, stalled: days >= STAGNATION_DAYS, fatDelta: fat };
   }
 
   /** Rythme relatif : % du poids perdu par semaine (positif = perte), tendance glissante. */
