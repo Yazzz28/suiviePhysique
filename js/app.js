@@ -49,11 +49,15 @@
     const { heightCm, sex } = v.settings;
     const composition = metrics.enrichComposition(v.composition, heightCm);
     const daily = metrics.dailyAverages(composition);
+    const firstWeight = v.allComposition.find((r) => isFiniteNumber(r.weight));
+    // Poids associé à chaque relevé de mensurations (sur toutes les pesées, pas seulement la période)
+    const weightAt = metrics.weightLookup(metrics.dailyAverages(v.allComposition));
     return {
       composition,
       daily,
+      startWeight: firstWeight ? firstWeight.weight : null,
       projection: SP.analysis.projection.build({ daily, composition }),
-      measurements: metrics.enrichMeasurements(v.measurements, heightCm, sex),
+      measurements: metrics.enrichMeasurements(v.measurements, heightCm, sex, weightAt),
       settings: v.settings,
       period: v.period,
     };
@@ -86,11 +90,16 @@
     safe('insights', () => renderInsights(ctx));
     if (hasComp) {
       safe('poids', () => SP.charts.weight.render(ctx));
+      safe('dynamique', () => SP.charts.dynamics.render(ctx));
       safe('calendrier', () => SP.charts.calendar.render(ctx));
     }
-    if (hasFull) safe('composition', () => SP.charts.composition.render(ctx));
+    if (hasFull) {
+      safe('composition', () => SP.charts.composition.render(ctx));
+      safe('cartes de composition', () => SP.charts.compositionMap.render(ctx));
+    }
     if (hasMeas) {
       safe('mensurations', () => SP.charts.measurements.render(ctx));
+      safe('indices de mensurations', () => SP.charts.measurementIndices.render(ctx));
       safe('silhouette', () => SP.silhouette.view.render(ctx));
     }
     safe('tableaux', () => {

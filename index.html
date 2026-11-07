@@ -191,6 +191,19 @@
             <div class="card__head"><div><h3>Heure de pesée</h3><p class="card__sub">Écart à la moyenne 7 j selon l'heure</p></div></div>
             <div class="chart-box"><canvas id="c-weigh-time"></canvas></div>
           </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Déficit calorique estimé</h3><p class="card__sub" id="deficit-sub">kcal/jour</p></div></div>
+            <div class="chart-box"><canvas id="c-deficit"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Vitesse de perte</h3><p class="card__sub">Observée vs attendue par le modèle (kg/semaine)</p></div></div>
+            <div class="chart-legend" id="lg-speed"></div>
+            <div class="chart-box"><canvas id="c-speed"></canvas></div>
+          </div>
+          <div class="card span-all">
+            <div class="card__head"><div><h3>Distribution des variations quotidiennes</h3><p class="card__sub" id="dod-hist-sub">Variations d'un jour à l'autre</p></div></div>
+            <div class="chart-box chart-box--short"><canvas id="c-dod-hist"></canvas></div>
+          </div>
           <div class="card span-all">
             <div class="card__head"><div><h3>Calendrier des pesées</h3><p class="card__sub">Régularité et sens de variation, jour par jour</p></div></div>
             <div class="calendar" id="calendar"></div>
@@ -221,6 +234,18 @@
             <div class="chart-legend" id="lg-comp-split"></div>
             <div class="chart-box"><canvas id="c-comp-split"></canvas></div>
           </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Trajectoire gras / maigre</h3><p class="card__sub">Moyennes hebdomadaires · vers la gauche = moins de gras, vers le bas = moins de masse maigre</p></div></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-traj"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Carte de composition</h3><p class="card__sub">Indice de masse grasse × indice de masse maigre · zones de FMI (Kelly 2009), diagonales = IMC constant</p></div></div>
+            <div class="chart-box chart-box--tall"><canvas id="c-fmi-map"></canvas></div>
+          </div>
+          <div class="card span-2">
+            <div class="card__head"><div><h3>Part de gras dans la perte</h3><p class="card__sub">% du poids perdu qui vient de la masse grasse, cumulé depuis la première pesée complète</p></div></div>
+            <div class="chart-box chart-box--short"><canvas id="c-fat-share"></canvas></div>
+          </div>
         </div>
         <div class="grid grid--3" style="margin-top: var(--space-4)">
           <div class="card"><div class="card__head"><div><h3>Masse grasse</h3><p class="card__sub">kg</p></div></div><div class="chart-box chart-box--short"><canvas id="c-fat-kg"></canvas></div></div>
@@ -245,6 +270,10 @@
           <p>Tours mesurés au mètre ruban. Vert = baisse, rouge = hausse depuis le premier relevé de la période.</p>
         </div>
         <div class="grid grid--multiples" id="meas-multiples"></div>
+        <div class="card" style="margin-top: var(--space-4)">
+          <div class="card__head"><div><h3>Matrice des variations</h3><p class="card__sub">% de variation de chaque zone depuis le premier relevé (bleu = baisse, rouge = hausse)</p></div></div>
+          <div class="table-wrap" id="meas-matrix"></div>
+        </div>
         <div class="grid grid--2" style="margin-top: var(--space-4)">
           <div class="card span-2">
             <div class="card__head">
@@ -291,6 +320,20 @@
             <div class="chart-legend" id="lg-navy"></div>
             <div class="chart-box"><canvas id="c-navy"></canvas></div>
           </div>
+          <div class="card span-2">
+            <div class="card__head"><div><h3>Centimètres perdus par kg perdu</h3><p class="card__sub">Pente tour / poids, zone par zone : les zones qui répondent le mieux à la perte de poids</p></div></div>
+            <div class="chart-legend" id="lg-cm-per-kg"></div>
+            <p class="muted hidden" id="cm-per-kg-empty">Il faut au moins 3 relevés de mensurations avec une pesée proche (± 3 jours).</p>
+            <div class="chart-box chart-box--tall"><canvas id="c-cm-per-kg"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>Body Roundness Index (BRI)</h3><p class="card__sub">Rondeur du corps (tour de taille et taille) · risque accru sous 3,4 et dès 6,9 (Zhang 2024)</p></div></div>
+            <div class="chart-box"><canvas id="c-bri"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><div><h3>A Body Shape Index (ABSI)</h3><p class="card__sub">Tour de taille corrigé de l'IMC et de la taille · plus bas = graisse moins abdominale</p></div></div>
+            <div class="chart-box"><canvas id="c-absi"></canvas></div>
+          </div>
         </div>
       </section>
 
@@ -298,7 +341,7 @@
       <section class="section" id="section-silhouette">
         <div class="section__head">
           <h2>Silhouette</h2>
-          <p>Reconstruction de face à partir des tours mesurés (chaque tour est converti en largeur). Vue de face : ton côté gauche est à droite de l'écran.</p>
+          <p>Reconstruction à partir des tours mesurés (chaque tour est converti en largeur et en profondeur). Vue de face : ton côté gauche est à droite de l'écran.</p>
         </div>
         <div class="silhouette-layout">
           <div class="card">
@@ -309,6 +352,7 @@
               </div>
               <button type="button" class="btn" id="sil-play">▶ Lecture</button>
               <div class="timeline-legend" id="sil-timeline-legend"></div>
+              <button type="button" class="btn" data-export="sil-stage" data-filename="silhouette-face.png"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg> PNG</button>
             </div>
             <p class="card__sub" id="sil-caption"></p>
             <svg class="silhouette-stage" id="sil-stage" role="img" aria-label="Silhouettes superposées"></svg>
@@ -322,12 +366,34 @@
               <div class="card__head">
                 <div><h3>Carte des variations</h3><p class="card__sub">Silhouette sélectionnée colorée par variation relative de chaque zone</p></div>
               </div>
-              <div class="timeline-legend" id="sil-heat-legend"></div>
+              <div class="silhouette-controls">
+                <div class="timeline-legend" id="sil-heat-legend"></div>
+                <button type="button" class="btn" data-export="sil-heat" data-filename="silhouette-variations.png"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg> PNG</button>
+              </div>
               <svg class="silhouette-stage silhouette-stage--small" id="sil-heat" role="img" aria-label="Carte des variations par zone"></svg>
             </div>
             <div class="card">
               <div class="card__head"><h3>Détail chiffré</h3></div>
               <div class="table-wrap" id="sil-detail"></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div class="card">
+            <div class="card__head">
+              <div><h3>Vue de profil</h3><p class="card__sub">Profondeur de chaque section · face tournée vers la droite, bras masqués · même mode et même date que la vue de face</p></div>
+              <button type="button" class="btn" data-export="sil-profile" data-filename="silhouette-profil.png"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg> PNG</button>
+            </div>
+            <svg class="silhouette-stage silhouette-stage--small" id="sil-profile" role="img" aria-label="Silhouette de profil"></svg>
+          </div>
+          <div class="card">
+            <div class="card__head">
+              <div><h3>Avant / après</h3><p class="card__sub">Fais glisser le curseur : premier relevé à gauche, relevé sélectionné à droite</p></div>
+              <button type="button" class="btn" data-export="sil-split" data-filename="silhouette-avant-apres.png"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v12m0 0-4-4m4 4 4-4M4 20h16"/></svg> PNG</button>
+            </div>
+            <svg class="silhouette-stage silhouette-stage--small" id="sil-split" role="img" aria-label="Comparaison avant après"></svg>
+            <div class="silhouette-slider">
+              <input type="range" id="sil-split-range" min="0" max="100" step="1" value="50" aria-label="Position du séparateur avant / après">
             </div>
           </div>
         </div>
@@ -375,10 +441,15 @@
   <script src="js/charts/weightCharts.js"></script>
   <script src="js/charts/compositionCharts.js"></script>
   <script src="js/charts/measurementCharts.js"></script>
+  <script src="js/charts/measurementIndexCharts.js"></script>
+  <script src="js/charts/dynamicsCharts.js"></script>
+  <script src="js/charts/compositionMapCharts.js"></script>
   <script src="js/charts/calendarHeatmap.js"></script>
   <!-- Silhouette -->
   <script src="js/silhouette/bodyModel.js"></script>
+  <script src="js/silhouette/profileModel.js"></script>
   <script src="js/silhouette/silhouetteRenderer.js"></script>
+  <script src="js/silhouette/exportPng.js"></script>
   <script src="js/silhouette/silhouetteView.js"></script>
   <!-- Interface -->
   <script src="js/ui/tooltip.js"></script>

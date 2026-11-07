@@ -61,16 +61,14 @@
    * Construit le modèle à partir des pesées.
    * Retourne null si la tendance n'est pas à la baisse (pas de projection de perte).
    */
-  function build({ daily, composition }) {
-    const rate = trends.recentTrend(daily, 'weight', RATE_WINDOW_DAYS) || trends.trend(daily, 'weight');
-    if (!rate || rate.slopePerDay >= 0 || !daily.length) return null;
+  /** Quantile ~80 % (bilatéral) de la loi normale : fourchette « probable ». */
+  const RANGE_Z = 1.28;
 
-    const t0 = daily[daily.length - 1].date;
-    const w0 = rate.at(t0); // poids lissé actuel
-    const { rho, fatShare } = energyDensity(composition);
-    const beta = bmrSlope(composition);
+  /** Modèle à partir d'un rythme donné (kg/j, négatif) et du poids lissé actuel. */
+  function fromRate({ slopePerDay, t0, w0, rho, fatShare, beta }) {
+    if (!(slopePerDay < 0)) return null;
     const c = EXPENDITURE_DROP_PER_KG;
-    const D0 = -rate.slopePerDay * rho;
+    const D0 = -slopePerDay * rho;
     const plateau = w0 - D0 / c;
     const tau = rho / c; // constante de temps (jours)
 
@@ -85,8 +83,10 @@
     };
 
     /** Même rythme mais sans ralentissement (pour comparaison). */
-    const linearDaysTo = (target) =>
-      isFiniteNumber(target) && target < w0 ? (w0 - target) / -rate.slopePerDay : null;
+    const linearDaysTo = (target) => (isFiniteNumber(target) && target < w0 ? (w0 - target) / -slopePerDay : null);
+
+    /** Vitesse attendue (kg/semaine, négative) après `days` jours. */
+    const speedAtDays = (days) => slopePerDay * 7 * Math.exp(-days / tau);
 
     /** Points de la courbe projetée, de t0 à t0 + days. */
     const curve = (days, stepDays = 2) => {
@@ -99,7 +99,7 @@
       t0,
       w0,
       deficit: D0,
-      ratePerWeek: rate.slopePerDay * 7,
+      ratePerWeek: slopePerDay * 7,
       rho,
       fatShare,
       bmrSlope: beta.value,
@@ -108,6 +108,7 @@
       plateau,
       tau,
       weightAtDays,
+      speedAtDays,
       daysTo,
       linearDaysTo,
       dateFor: (target) => {
@@ -118,5 +119,34 @@
     };
   }
 
-  SP.analysis.projection = { build, ENERGY, RATE_WINDOW_DAYS, EXPENDITURE_DROP_PER_KG };
+  /**
+   * Construit le modèle à partir des pesées, avec une fourchette (≈ 80 %)
+   * issue de l'incertitude du rythme récent : `fast` / `slow`.
+   * Retourne null si la tendance n'est pas à la baisse.
+   */
+  function build({ daily, composition }) {
+    const rate = trends.recentTrend(daily, 'weight', RATE_WINDOW_DAYS) || trends.trend(daily, 'weight');
+    if (!rate || rate.slopePerDay >= 0 || !daily.length) return null;
+
+    const t0 = daily[daily.length - 1].date;
+    const base = {
+      t0,
+      w0: rate.at(t0), // poids lissé actuel
+      ...energyDensity(composition),
+      beta: bmrSlope(composition),
+    };
+    const model = fromRate({ ...base, slopePerDay: rate.slopePerDay });
+    const se = isFiniteNumber(rate.seSlopePerDay) ? rate.seSlopePerDay : 0;
+    model.fast = fromRate({ ...base, slopePerDay: rate.slopePerDay - RANGE_Z * se });
+    model.slow = fromRate({ ...base, slopePerDay: rate.slopePerDay + RANGE_Z * se }); // null si le rythme lent n'est plus une perte
+
+    /** Fourchette de dates pour une cible : { early, late } (late null = peut ne jamais être atteint). */
+    model.rangeFor = (target) => ({
+      early: model.fast ? model.fast.dateFor(target) : null,
+      late: model.slow ? model.slow.dateFor(target) : null,
+    });
+    return model;
+  }
+
+  SP.analysis.projection = { build, ENERGY, RATE_WINDOW_DAYS, EXPENDITURE_DROP_PER_KG, RANGE_Z };
 })(window.SP);

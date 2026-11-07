@@ -107,7 +107,10 @@
     const slope = sxy / sxx;
     const intercept = my - slope * mx;
     const r2 = syy === 0 ? 1 : (sxy * sxy) / (sxx * syy);
-    return { slope, intercept, r2 };
+    // Erreur standard de la pente (incertitude du rythme)
+    const residual = Math.max(0, syy - slope * sxy);
+    const seSlope = n > 2 ? Math.sqrt(residual / (n - 2) / sxx) : null;
+    return { slope, intercept, r2, seSlope, n };
   }
 
   /**

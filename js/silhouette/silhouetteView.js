@@ -6,7 +6,7 @@
   'use strict';
 
   const { fmt, fmtDelta, fmtDate, lerp, isFiniteNumber, escapeHtml } = SP.core.utils;
-  const { model, renderer } = SP.silhouette;
+  const { model, renderer, profile, exportPng } = SP.silhouette;
   const { CM_ZONES } = SP.parsers.measurements;
   const theme = SP.charts.theme;
 
@@ -14,6 +14,8 @@
 
   const view = {
     geoms: [],
+    profiles: [],
+    splitPct: 50,
     selected: 0,
     mode: 'overlay',
     playing: false,
@@ -51,7 +53,31 @@
     };
   }
 
-  function draw(override) {
+  /** Avant / après à rideau : premier relevé vs relevé sélectionné. */
+  function drawSplit(current) {
+    const svg = $('sil-split');
+    if (!svg || !view.geoms.length) return;
+    renderer.split(svg, view.geoms[0], current || view.geoms[view.selected], view.splitPct, {
+      tokens: theme.tokens(),
+      F: model.F,
+    });
+  }
+
+  /** Vue de profil, dans le même mode que la vue de face. */
+  function drawProfile(overrideProfile) {
+    const svg = $('sil-profile');
+    if (!svg || !view.profiles.length) return;
+    const tokens = theme.tokens();
+    const F = model.F;
+    if (view.mode === 'overlay') {
+      renderer.overlay(svg, view.profiles, { selected: view.selected, override: overrideProfile, tokens, F });
+    } else {
+      const current = overrideProfile || view.profiles[view.selected];
+      renderer.compare(svg, view.profiles[0], current, { tokens, F, labels: false });
+    }
+  }
+
+  function draw(override, overrideProfile) {
     const svg = $('sil-stage');
     const heatSvg = $('sil-heat');
     if (!svg || !view.geoms.length) return;
@@ -65,6 +91,8 @@
     } else {
       renderer.compare(svg, first, current, { tokens, F });
     }
+    drawProfile(overrideProfile);
+    drawSplit(current);
     if (heatSvg) {
       renderer.heat(heatSvg, first, current, { tokens, F, uid: 'main' });
       SP.ui.tooltip.bind(heatSvg, '[data-tip]');
@@ -147,7 +175,10 @@
       const to = from + 1;
       view.selected = t < 0.5 ? from : to;
       $('sil-slider').value = String(view.selected);
-      draw(interpolateGeom(view.geoms[from], view.geoms[to], eased));
+      draw(
+        interpolateGeom(view.geoms[from], view.geoms[to], eased),
+        model.interpolate(view.profiles[from], view.profiles[to], eased)
+      );
       if (t >= 1) {
         from = to;
         start = null;
@@ -174,6 +205,11 @@
   function bind() {
     if (view.bound) return;
     view.bound = true;
+    $('sil-split-range').addEventListener('input', (e) => {
+      view.splitPct = Number(e.target.value);
+      drawSplit();
+    });
+    exportPng.bind($('section-silhouette'));
     $('sil-slider').addEventListener('input', (e) => select(Number(e.target.value)));
     $('sil-play').addEventListener('click', () => (view.playing ? stop() : play()));
     $('sil-film').addEventListener('click', (e) => {
@@ -216,6 +252,7 @@
     const filled = model.fillGaps(measurements);
     const ref = model.reference(filled); // squelette commun : seuls les tissus varient
     view.geoms = filled.map((m) => model.build(m, heightCm, ref));
+    view.profiles = filled.map((m) => profile.build(m, heightCm));
     view.selected = view.geoms.length - 1;
     const slider = $('sil-slider');
     slider.max = String(view.geoms.length - 1);

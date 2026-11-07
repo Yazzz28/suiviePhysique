@@ -273,5 +273,5 @@
     };
   }
 
-  SP.silhouette.model = { build, reference, fillGaps, interpolate, F };
+  SP.silhouette.model = { build, reference, fillGaps, interpolate, torsoWidths, radius, DEPTH_RATIO, F };
 })(window.SP);

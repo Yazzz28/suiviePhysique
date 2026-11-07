@@ -10,7 +10,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -47,9 +47,14 @@ const APP_FILES = [
   'js/charts/weightCharts.js',
   'js/charts/compositionCharts.js',
   'js/charts/measurementCharts.js',
+  'js/charts/measurementIndexCharts.js',
+  'js/charts/dynamicsCharts.js',
+  'js/charts/compositionMapCharts.js',
   'js/charts/calendarHeatmap.js',
   'js/silhouette/bodyModel.js',
+  'js/silhouette/profileModel.js',
   'js/silhouette/silhouetteRenderer.js',
+  'js/silhouette/exportPng.js',
   'js/silhouette/silhouetteView.js',
   'js/ui/tooltip.js',
   'js/ui/dropzone.js',

@@ -21,6 +21,8 @@
     return {
       slopePerDay: reg.slope,
       slopePerWeek: reg.slope * 7,
+      seSlopePerDay: reg.seSlope,
+      n: reg.n,
       r2: reg.r2,
       t0,
       at: (date) => reg.intercept + reg.slope * ((date.getTime() - t0) / DAY_MS),
@@ -33,6 +35,25 @@
     const lastDate = records[records.length - 1].date;
     const from = startOfDay(lastDate).getTime() - (days - 1) * DAY_MS;
     return trend(records.filter((r) => r.date.getTime() >= from), key);
+  }
+
+  /**
+   * Tendance glissante : pour chaque jour, pente sur les `windowDays` jours
+   * précédents (au moins `minPoints` pesées couvrant au moins la moitié de la fenêtre).
+   */
+  function rollingTrend(daily, key, windowDays = 14, minPoints = 5) {
+    const out = [];
+    daily.forEach((rec, i) => {
+      const from = startOfDay(rec.date).getTime() - (windowDays - 1) * DAY_MS;
+      const win = [];
+      for (let j = i; j >= 0 && daily[j].date.getTime() >= from; j--) win.unshift(daily[j]);
+      const pts = win.filter((r) => isFiniteNumber(r[key]));
+      if (pts.length < minPoints) return;
+      if (daysBetween(pts[0].date, pts[pts.length - 1].date) < windowDays / 2) return;
+      const tr = trend(pts, key);
+      if (tr) out.push({ date: rec.date, slopePerDay: tr.slopePerDay, slopePerWeek: tr.slopePerWeek, r2: tr.r2 });
+    });
+    return out;
   }
 
   /** Date estimée d'atteinte d'une cible selon la tendance. */
@@ -125,6 +146,7 @@
   SP.analysis.trends = {
     trend,
     recentTrend,
+    rollingTrend,
     projectTarget,
     weekly,
     dayOverDay,

@@ -67,6 +67,36 @@
       const horizon = target ? Math.min(365, Math.max(21, target.days * 1.15)) : 90;
       const curve = projection.curve(Math.ceil(horizon));
       maxMs = Math.max(maxMs, curve[curve.length - 1].x);
+
+      // Fourchette probable (~80 %) : rythme récent ± incertitude de la régression
+      const fastCurve = projection.fast ? projection.fast.curve(Math.ceil(horizon)) : curve;
+      const slowCurve = projection.slow
+        ? projection.slow.curve(Math.ceil(horizon))
+        : curve.map((p) => ({ x: p.x, y: projection.w0 })); // rythme lent ≈ stagnation
+      const bandColor = withAlpha(t.textSecondary, 0.1);
+      datasets.push(
+        {
+          label: 'Fourchette basse',
+          data: fastCurve,
+          borderColor: 'transparent',
+          backgroundColor: bandColor,
+          pointRadius: 0,
+          tension: 0,
+          order: 5,
+        },
+        {
+          label: 'Fourchette haute',
+          data: slowCurve,
+          borderColor: 'transparent',
+          backgroundColor: bandColor,
+          fill: '-1',
+          pointRadius: 0,
+          tension: 0,
+          order: 5,
+        }
+      );
+      legend.push({ label: 'Fourchette probable (≈ 80 %)', color: bandColor, box: true });
+
       datasets.push({
         label: 'Projection',
         data: curve,

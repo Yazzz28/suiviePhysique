@@ -5,7 +5,7 @@
 (function (SP) {
   'use strict';
 
-  const { fmt, fmtDelta, mixHex, withAlpha, isFiniteNumber, clamp } = SP.core.utils;
+  const { fmt, fmtDelta, fmtDate, mixHex, withAlpha, isFiniteNumber, clamp } = SP.core.utils;
   const NS = 'http://www.w3.org/2000/svg';
   const LABEL_GAP = 8; // hauteur d'une étiquette sur deux lignes (unités SVG = cm)
 
@@ -127,17 +127,46 @@
 
   function titleNode(g) {
     const t = document.createElementNS(NS, 'title');
-    t.textContent = SP.core.utils.fmtDate(g.date, 'long');
+    t.textContent = fmtDate(g.date, 'long');
     return t;
   }
 
   /** Comparaison annotée départ vs sélection. */
-  function compare(svg, a, b, { tokens, F }) {
-    const { half, H } = prepare(svg, [a, b], { labelSpace: 30 });
+  function compare(svg, a, b, { tokens, F, labels = true }) {
+    const { half, H } = prepare(svg, [a, b], { labelSpace: labels ? 30 : 0 });
     drawGuides(svg, H, half, F);
     el('path', { d: smoothPath(a.outline), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-width:0.55;stroke-dasharray:1.6 1.1` }, svg);
     el('path', { d: smoothPath(b.outline), class: 'sil-fill', style: `fill:${withAlpha(tokens.series[0], 0.18)};stroke:${tokens.series[0]};stroke-width:0.7` }, svg);
-    drawLabels(svg, a, b, half);
+    if (labels) drawLabels(svg, a, b, half);
+  }
+
+  /**
+   * Avant / après à rideau : `a` visible à gauche du séparateur, `b` à droite.
+   * `pct` (0-100) = position du séparateur.
+   */
+  function split(svg, a, b, pct, { tokens, F, uid = 'split' }) {
+    const { half, H } = prepare(svg, [a, b]);
+    drawGuides(svg, H, half, F);
+    const W = half + 4;
+    const splitX = -W + (2 * W * clamp(pct, 0, 100)) / 100;
+    const defs = el('defs', {}, svg);
+    const clipA = el('clipPath', { id: `${uid}-a` }, defs);
+    el('rect', { x: -W, y: -4, width: Math.max(0, splitX + W), height: H + 8 }, clipA);
+    const clipB = el('clipPath', { id: `${uid}-b` }, defs);
+    el('rect', { x: splitX, y: -4, width: Math.max(0, W - splitX), height: H + 8 }, clipB);
+
+    const fillA = `fill:${withAlpha(tokens.series[1], 0.22)};stroke:${tokens.series[1]};stroke-width:0.7`;
+    const fillB = `fill:${withAlpha(tokens.series[0], 0.22)};stroke:${tokens.series[0]};stroke-width:0.7`;
+    el('path', { d: smoothPath(a.outline), class: 'sil-fill', style: fillA, 'clip-path': `url(#${uid}-a)` }, svg);
+    el('path', { d: smoothPath(b.outline), class: 'sil-fill', style: fillB, 'clip-path': `url(#${uid}-b)` }, svg);
+    // Contour fantôme de l'autre date pour comparer au niveau du séparateur
+    el('path', { d: smoothPath(b.outline), class: 'sil-outline', style: `stroke:${tokens.series[0]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-a)` }, svg);
+    el('path', { d: smoothPath(a.outline), class: 'sil-outline', style: `stroke:${tokens.series[1]};stroke-dasharray:1.2 1;opacity:0.6`, 'clip-path': `url(#${uid}-b)` }, svg);
+
+    el('line', { x1: splitX, x2: splitX, y1: -4, y2: H + 4, style: 'stroke:var(--text-primary);stroke-width:0.35' }, svg);
+    el('text', { x: -W + 1, y: 2, class: 'sil-label sil-label--strong' }, svg).textContent = fmtDate(a.date);
+    el('text', { x: W - 1, y: 2, 'text-anchor': 'end', class: 'sil-label sil-label--strong' }, svg).textContent =
+      fmtDate(b.date);
   }
 
   function zoneAnchor(geom, zone) {
@@ -259,5 +288,5 @@
     el('path', { d: smoothPath(geom.outline), class: 'sil-fill', style: `fill:${withAlpha(color, 0.2)};stroke:${color};stroke-width:0.8` }, svg);
   }
 
-  SP.silhouette.renderer = { overlay, compare, heat, mini, timeColor, divergingColor, smoothPath };
+  SP.silhouette.renderer = { overlay, compare, split, heat, mini, timeColor, divergingColor, smoothPath };
 })(window.SP);

@@ -96,6 +96,11 @@
       const target = projection ? projection.dateFor(settings.targetWeight) : null;
       if (target) {
         const linearDays = projection.linearDaysTo(settings.targetWeight);
+        const range = projection.rangeFor(settings.targetWeight);
+        const rangeText = range.early
+          ? ` Fourchette probable : du ${fmtDate(range.early.date, 'long')} ` +
+            (range.late ? `au ${fmtDate(range.late.date, 'long')}.` : `à jamais, si le rythme faiblit trop.`)
+          : '';
         push(
           'info',
           '⚑',
@@ -103,7 +108,8 @@
             `<strong>${fmtDate(target.date, 'long')}</strong> (≈ ${Math.round(target.days)} jours)` +
             (linearDays
               ? `, soit ${Math.round(target.days - linearDays)} jours de plus qu'en gardant le rythme actuel sans ralentissement.`
-              : '.')
+              : '.') +
+            rangeText
         );
       } else if (projection && settings.targetWeight < projection.w0) {
         push(

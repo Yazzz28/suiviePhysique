@@ -34,11 +34,11 @@ Formats acceptés : séparateur `;` ou `,`, décimales `89,9` ou `89.9`, dates `
 
 ## Ce que l'app affiche
 
-- **Résumé** : indicateurs clés et analyse rédigée (rythme, composition de la perte, projection vers un objectif, assiduité).
-- **Poids** : courbe avec moyenne 7 jours, tendance et projection non linéaire (bilan énergétique : la perte ralentit à mesure que la dépense baisse, ≈ 22 kcal/j par kg perdu d'après Hall et al., Lancet 2011), IMC, variations quotidiennes et hebdomadaires, effet du jour de la semaine, heure de pesée, calendrier.
-- **Composition** : origine de la variation de poids (graisse / muscle / eau), répartition, masse grasse, muscle, masse maigre, FFMI, graisse viscérale, eau, protéines, os, métabolisme.
-- **Mensurations** : évolution de chaque zone, profil radar, variations, asymétries gauche/droite, ratios (taille/hauteur, taille/hanches, forme en V), estimation US Navy du % de graisse.
-- **Silhouette** : reconstruction de face à partir des tours (squelette commun à toutes les dates : seule l'épaisseur des tissus varie), superposition de toutes les dates, comparaison départ/sélection annotée, carte de chaleur des variations et animation dans le temps.
+- **Résumé** : indicateurs clés, jauge de progression vers l'objectif et analyse rédigée (rythme, composition de la perte, déficit estimé, projection et fourchette de dates, assiduité).
+- **Poids** : courbe avec moyenne 7 jours, tendance observée et projection non linéaire avec fourchette probable (bilan énergétique : la perte ralentit à mesure que la dépense baisse, ≈ 22 kcal/j par kg perdu d'après Hall et al., Lancet 2011), déficit calorique estimé, vitesse de perte observée vs attendue, IMC, variations quotidiennes et hebdomadaires, distribution des variations, effet du jour de la semaine, heure de pesée, calendrier.
+- **Composition** : origine de la variation de poids (graisse / muscle / eau), répartition, trajectoire gras / maigre, carte FMI × FFMI (Kelly 2009), part de gras dans la perte, masse grasse, muscle, masse maigre, FFMI, graisse viscérale, eau, protéines, os, métabolisme.
+- **Mensurations** : évolution de chaque zone, matrice des variations zones × dates, profil radar, variations, cm perdus par kg perdu, asymétries gauche/droite, ratios (taille/hauteur, taille/hanches, forme en V), BRI et ABSI, estimation US Navy du % de graisse.
+- **Silhouette** : reconstruction de face et de profil à partir des tours (squelette commun à toutes les dates : seule l'épaisseur des tissus varie), superposition de toutes les dates, comparaison annotée, avant / après à curseur, carte de chaleur des variations, animation dans le temps et export PNG.
 - **Données** : tableaux bruts.
 
 Un filtre de période (tout / 90 / 30 / 14 / 7 jours) et un thème clair/sombre sont disponibles.
