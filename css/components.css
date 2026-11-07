@@ -470,3 +470,6 @@
 .data-table .cell-flag { color: var(--serious); font-weight: 600; }
 
 .field input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+
+.milestone.is-touched .milestone__dot { border-color: var(--good); background: color-mix(in srgb, var(--good) 35%, transparent); }
+.milestone__status.is-touched { color: var(--good-text); }

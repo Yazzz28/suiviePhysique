@@ -242,7 +242,7 @@
   function pushNextMilestone(push, records) {
     if (!records) return;
     const next = [...records.paliers.map((p) => ({ ...p, label: `${fmt(p.weight, 0)} kg` })), ...records.bmi.map((b) => ({ ...b, label: `IMC < ${fmt(b.value, 0)} (${fmt(b.weight, 1)} kg)` }))]
-      .filter((m) => !m.date && m.projected)
+      .filter((m) => !m.date && !m.touched && m.projected)
       .sort((a, b) => a.projected.date - b.projected.date)[0];
     if (!next) return;
     push('info', '🏁', `Prochain jalon : <strong>${next.label}</strong>, prévu vers le ${fmtDate(next.projected.date, 'long')}.`);

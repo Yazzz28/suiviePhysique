@@ -7,9 +7,12 @@
 
   const { fmt, fmtDelta, fmtDate, isFiniteNumber, escapeHtml } = SP.core.utils;
 
-  /** Statut d'un jalon : atteint, prévu, ou hors de portée de la projection. */
-  function milestoneStatus(item) {
-    if (item.date) return `<span class="milestone__status is-done">✓ ${fmtDate(item.date)}</span>`;
+  /** Statut d'un jalon : confirmé, touché, prévu, ou hors de portée de la projection. */
+  function milestoneStatus(item, current) {
+    if (item.date) return `<span class="milestone__status is-done">✓ confirmé le ${fmtDate(item.date)}</span>`;
+    if (item.touched) {
+      return `<span class="milestone__status is-touched">touché le ${fmtDate(item.touched)} · moy. 7 j ${fmt(current, 1)} kg</span>`;
+    }
     if (item.projected) return `<span class="milestone__status">prévu vers le ${fmtDate(item.projected.date)}</span>`;
     return '<span class="milestone__status muted">au-delà de la projection</span>';
   }
@@ -34,15 +37,15 @@
         ${rows
           .map(
             (r) =>
-              `<li class="milestone${r.date ? ' is-done' : ''}"${r.title ? ` title="${escapeHtml(r.title)}"` : ''}>
+              `<li class="milestone${r.date ? ' is-done' : r.touched ? ' is-touched' : ''}"${r.title ? ` title="${escapeHtml(r.title)}"` : ''}>
                  <span class="milestone__dot" aria-hidden="true"></span>
                  <span class="milestone__label">${escapeHtml(r.label)}</span>
-                 ${milestoneStatus(r)}
+                 ${milestoneStatus(r, rec.current)}
                </li>`
           )
           .join('')}
       </ul>
-      <p class="chart-hint">Franchissements calculés sur la moyenne 7 jours ; dates prévues selon la projection (apport constant).</p>`;
+      <p class="chart-hint">« Touché » : une pesée passe sous le seuil. « Confirmé » : la moyenne 7 jours aussi. Dates prévues selon la projection (apport constant).</p>`;
   }
 
   function signedCell(value, decimals, unit, goodWhenNegative = true) {

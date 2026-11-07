@@ -2,8 +2,10 @@
  * Jalons et bilans : records, paliers de poids, catégories d'IMC franchies,
  * stagnation, rythme relatif, bilan mensuel, composition récente de la perte.
  *
- * Les franchissements utilisent la moyenne glissante 7 jours : une seule
- * pesée basse (eau, transit) ne compte pas comme un palier atteint.
+ * Deux niveaux de franchissement :
+ * - « touché » : une pesée passe sous le seuil ;
+ * - « confirmé » : la moyenne glissante 7 jours passe sous le seuil (une seule
+ *   pesée basse, due à l'eau ou au transit, ne suffit pas).
  */
 (function (SP) {
   'use strict';
@@ -30,10 +32,18 @@
       .filter((p) => isFiniteNumber(p.w));
   }
 
-  /** Première date où la série lissée passe sous `threshold`. */
+  /** Première date où la série passe sous `threshold`. */
   function crossingDate(series, threshold) {
     const hit = series.find((p) => p.w <= threshold);
     return hit ? hit.date : null;
+  }
+
+  /** Statut d'un seuil : confirmé (moyenne 7 j), touché (pesée), sinon projection. */
+  function thresholdStatus(series, rawSeries, threshold, projection) {
+    const date = crossingDate(series, threshold);
+    const touched = date ? null : crossingDate(rawSeries, threshold);
+    const projected = !date && !touched && projection ? projection.dateFor(threshold) : null;
+    return { date, touched, projected };
   }
 
   /** Records, paliers de 5 kg et catégories d'IMC (sur toutes les pesées). */
@@ -41,6 +51,7 @@
     const series = smoothed(allDaily);
     if (series.length < 2) return null;
     const raw = allDaily.filter((d) => isFiniteNumber(d.weight));
+    const rawSeries = raw.map((d) => ({ date: d.date, w: d.weight }));
     const low = raw.reduce((a, b) => (b.weight < a.weight ? b : a));
     const high = raw.reduce((a, b) => (b.weight > a.weight ? b : a));
     const start = raw[0].weight;
@@ -50,10 +61,9 @@
     const paliers = [];
     let upcoming = 0;
     for (let p = Math.ceil(start / PALIER_STEP_KG) * PALIER_STEP_KG - PALIER_STEP_KG; p > 0 && upcoming < 2; p -= PALIER_STEP_KG) {
-      const date = crossingDate(series, p);
-      const projected = !date && projection ? projection.dateFor(p) : null;
-      if (!date) upcoming++;
-      paliers.push({ weight: p, date, projected });
+      const status = thresholdStatus(series, rawSeries, p, projection);
+      if (!status.date) upcoming++;
+      paliers.push({ weight: p, ...status });
     }
 
     // Catégories d'IMC franchies / à venir
@@ -61,9 +71,7 @@
     const bmi = h2
       ? BMI_THRESHOLDS.filter((t) => t.value * h2 < start).map((t) => {
           const weight = t.value * h2;
-          const date = crossingDate(series, weight);
-          const projected = !date && projection ? projection.dateFor(weight) : null;
-          return { ...t, weight, date, projected };
+          return { ...t, weight, ...thresholdStatus(series, rawSeries, weight, projection) };
         })
       : [];
 
