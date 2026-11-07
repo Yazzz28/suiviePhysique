@@ -22,6 +22,15 @@
     return labels.map((label, i) => ({ label: String(label), min: firstMin + i * width, max: firstMin + (i + 1) * width }));
   }
 
+  /** Tailles W26 à W50 : la taille Wn couvre [n + offset − 0,5 ; n + offset + 0,5[ pouces. */
+  function inchSizes(offset) {
+    const out = [];
+    for (let n = 26; n <= 50; n++) {
+      out.push({ label: `W${n}`, min: (n + offset - 0.5) * 2.54, max: (n + offset + 0.5) * 2.54 });
+    }
+    return out;
+  }
+
   const FR_MEN = [38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64];
   const FR_WOMEN = [34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54];
 
@@ -44,6 +53,12 @@
     // Pantalon femme : tour de taille et de hanches
     pantsWaistWomen: [...steps(FR_WOMEN.slice(0, 6), 62, 4), ...steps(FR_WOMEN.slice(6), 86, 6)],
     pantsHipWomen: [...steps(FR_WOMEN.slice(0, 6), 86, 4), ...steps(FR_WOMEN.slice(6), 110, 6)],
+    // Jean (taille US) : W = tour de taille en pouces, calculé directement depuis la mesure
+    // (la règle « FR − 10 » dérive dans les grandes tailles).
+    jeansWaist: inchSizes(0),
+    // Hanches d'un jean coupe droite ≈ W + 8 pouces (homme), W + 10 (femme)
+    jeansHipMen: inchSizes(8),
+    jeansHipWomen: inchSizes(10),
   };
 
   /** Lettre usuelle d'une taille FR femme. */
@@ -134,14 +149,19 @@
         const fr = Number(pants.limiting.fit.size.label);
         const inseam = inseamInches(heightCm);
         out.push({ id: 'pants', garment: 'Pantalon, jupe', size: String(fr), alt: `${WOMEN_LETTER[fr] || ''}`, ...pants });
-        out.push({
-          id: 'jeans',
-          garment: 'Jean (taille US)',
-          size: `W${fr - 10}`,
-          alt: inseam ? `L${inseam} (longueur estimée d'après ta taille)` : '',
-          ...pants,
-          formatLabel: (label) => `W${Number(label) - 10}`, // FR → US (W = FR − 10)
-        });
+        const jeans = fitAll([
+          { chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` },
+          { chart: CHARTS.jeansHipWomen, value: m.hip, label: 'Hanches' },
+        ]);
+        if (jeans) {
+          out.push({
+            id: 'jeans',
+            garment: 'Jean (taille US)',
+            size: jeans.limiting.fit.size.label,
+            alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
+            ...jeans,
+          });
+        }
       }
       if (top) {
         out.push({
@@ -171,14 +191,19 @@
       const fr = Number(pants.limiting.fit.size.label);
       const inseam = inseamInches(heightCm);
       out.push({ id: 'pants', garment: 'Pantalon', size: String(fr), alt: 'Taille française', ...pants });
-      out.push({
-        id: 'jeans',
-        garment: 'Jean (taille US)',
-        size: `W${fr - 10}`,
-        alt: inseam ? `L${inseam} (longueur estimée d'après ta taille)` : '',
-        ...pants,
-        formatLabel: (label) => `W${Number(label) - 10}`, // FR → US (W = FR − 10)
-      });
+      const jeans = fitAll([
+        { chart: CHARTS.jeansWaist, value: waistForPants, label: `Tour de taille (${riseLabel})` },
+        { chart: CHARTS.jeansHipMen, value: m.hip, label: 'Hanches' },
+      ]);
+      if (jeans) {
+        out.push({
+          id: 'jeans',
+          garment: 'Jean (taille US)',
+          size: jeans.limiting.fit.size.label,
+          alt: inseam ? `L${inseam} : longueur de jambe en pouces, estimée d'après ta taille` : '',
+          ...jeans,
+        });
+      }
     }
 
     const shirt = fitAll([{ chart: CHARTS.collar, value: m.neck, label: 'Cou' }]);
