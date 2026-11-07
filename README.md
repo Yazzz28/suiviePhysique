@@ -6,7 +6,7 @@ Application web (HTML / CSS / JS, sans serveur) pour analyser l'évolution de to
 
 ## Utilisation
 
-1. Ouvre `index.html` dans ton navigateur (double-clic suffit). Une connexion internet est nécessaire pour charger la librairie de graphiques (Chart.js via CDN).
+1. Ouvre `index.html` dans ton navigateur (double-clic suffit). Aucune connexion internet n'est nécessaire en local : toutes les librairies sont incluses dans le projet.
 2. Dépose tes fichiers CSV (un seul ou les deux). Le type de chaque fichier est détecté automatiquement.
 
 ### Installer sur mobile
@@ -16,7 +16,7 @@ L'app est une PWA installable depuis sa version en ligne (GitHub Pages) :
 - **Android (Chrome)** : menu ⋮ → *Installer l'application*.
 - **iPhone (Safari)** : bouton Partager → *Sur l'écran d'accueil*.
 
-Le service worker ne met **rien en cache** : il sert uniquement à rendre l'app installable. Une connexion internet reste nécessaire à l'ouverture.
+Le service worker ne met **rien en cache** : il sert uniquement à rendre l'app installable. Une connexion internet reste nécessaire pour ouvrir la version en ligne.
 
 ### Pas de balance connectée ?
 
@@ -53,3 +53,15 @@ js/
   ui/          dépôt de fichiers, modèles CSV, KPI, tableaux, filtres, info-bulles
   app.js       orchestration
 ```
+
+## Dépendances
+
+Hébergées dans `js/vendor/` (aucun script chargé depuis un CDN, pour qu'un tiers compromis ne puisse pas exécuter de code dans la page). Licences MIT, en-têtes conservés.
+
+| Fichier | Version | SHA-256 |
+|---|---|---|
+| `chart.umd.js` | Chart.js 4.4.1 | `74401d738dd3e03ee5dfb3b6841210fe2c4ead8a960c4011ca4ba0b78a9fd8f3` |
+| `chartjs-plugin-zoom.min.js` | chartjs-plugin-zoom 2.0.1 | `503c709802be285c676afe0369bf5f72066d0b0c23929188c3158f35c0327a9c` |
+| `hammer.min.js` | Hammer.js 2.0.8 (paquet npm ; l'en-tête du fichier indique 2.0.7) | `7953631f0e54794d2352a3cfa591c0914d73e14f90141058e3cf16bee7939bcf` |
+
+Empreintes vérifiées identiques entre jsDelivr et unpkg au moment de l'import.

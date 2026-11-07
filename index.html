@@ -65,7 +65,7 @@
     <div class="file-status" id="file-status" aria-live="polite"></div>
 
     <div class="alert hidden" id="cdn-error">
-      Chart.js n'a pas pu être chargé (connexion internet requise pour la librairie de graphiques).
+      Chart.js n'a pas pu être chargé (fichier js/vendor/chart.umd.js manquant).
       Les silhouettes et tableaux fonctionneront, mais pas les graphiques.
     </div>
 
@@ -351,10 +351,10 @@
     </main>
   </div>
 
-  <!-- Librairies (versions épinglées) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <!-- Librairies hébergées dans le projet (aucun script tiers chargé depuis un CDN) -->
+  <script src="js/vendor/chart.umd.js"></script>
+  <script src="js/vendor/hammer.min.js"></script>
+  <script src="js/vendor/chartjs-plugin-zoom.min.js"></script>
 
   <!-- Noyau -->
   <script src="js/core/namespace.js"></script>
