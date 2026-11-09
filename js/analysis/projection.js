@@ -124,14 +124,15 @@
    * issue de l'incertitude du rythme récent : `fast` / `slow`.
    * Retourne null si la tendance n'est pas à la baisse.
    */
-  function build({ daily, composition }) {
+  function build({ daily, composition, w0 }) {
     const rate = trends.recentTrend(daily, 'weight', RATE_WINDOW_DAYS) || trends.trend(daily, 'weight');
     if (!rate || rate.slopePerDay >= 0 || !daily.length) return null;
 
     const t0 = daily[daily.length - 1].date;
     const base = {
       t0,
-      w0: rate.at(t0), // poids lissé actuel
+      // Poids lissé actuel : la tendance affichée si elle est fournie (courbe continue), sinon la régression récente
+      w0: isFiniteNumber(w0) ? w0 : rate.at(t0),
       ...energyDensity(composition),
       beta: bmrSlope(composition),
     };
@@ -141,6 +142,12 @@
     model.slow = fromRate({ ...base, slopePerDay: rate.slopePerDay + RANGE_Z * se }); // null si le rythme lent n'est plus une perte
 
     /** Fourchette de dates pour une cible : { early, late } (late null = peut ne jamais être atteint). */
+    /**
+     * Scénario à déficit choisi (kcal/j, ex. dépense réelle − apport prévu),
+     * avec le même modèle et le même point de départ. null si pas de déficit.
+     */
+    model.scenario = (deficit) => (isFiniteNumber(deficit) && deficit > 0 ? fromRate({ ...base, slopePerDay: -deficit / base.rho }) : null);
+
     model.rangeFor = (target) => ({
       early: model.fast ? model.fast.dateFor(target) : null,
       late: model.slow ? model.slow.dateFor(target) : null,

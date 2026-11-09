@@ -135,3 +135,21 @@
   .span-2 { grid-column: auto; }
   .grid--kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* =========================================================
+   Vues « Essentiel » / « Toutes les analyses »
+   ========================================================= */
+.view-switch { flex: none; }
+
+.view-essential #dashboard .card:not([data-essential]) { display: none !important; }
+.view-essential .view-hidden { display: none !important; }
+.view-essential .section__tools,
+.view-essential #energy-window { display: none !important; }
+
+.view-more {
+  display: none;
+  text-align: center;
+  padding: var(--space-6) 0 var(--space-7);
+}
+.view-more .muted { margin-bottom: var(--space-3); font-size: 0.85rem; }
+.view-essential .view-more { display: block; }

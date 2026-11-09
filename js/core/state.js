@@ -29,6 +29,8 @@
       sex: 'male',
       excludeOutliers: true, // exclure les mensurations douteuses des graphiques
       includeIncompleteMeals: true, // intégrer les jours de saisie de repas probablement incomplète
+      targetDate: null, // date visée pour l'objectif de poids (budget calorique)
+      plannedIntake: null, // apport prévu (kcal/j) : scénario de projection
     },
   });
 

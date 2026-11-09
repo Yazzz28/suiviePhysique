@@ -122,6 +122,10 @@
   <div id="dashboard" class="hidden">
     <nav class="app-nav" aria-label="Sections">
       <div class="app-nav__inner">
+        <div class="segmented view-switch" role="group" aria-label="Vue">
+          <button type="button" data-view="essential" aria-pressed="true">Essentiel</button>
+          <button type="button" data-view="full" aria-pressed="false">Toutes les analyses</button>
+        </div>
         <div class="app-nav__links">
           <a class="app-nav__link" href="#section-summary">Résumé</a>
           <a class="app-nav__link" href="#section-weight">Poids</a>
@@ -154,6 +158,12 @@
         <label class="field">Objectif de poids (kg)
           <input type="number" id="input-target" min="30" max="300" step="0.5" inputmode="decimal" placeholder="ex. 80">
         </label>
+        <label class="field">Date cible
+          <input type="date" id="input-target-date">
+        </label>
+        <label class="field" id="field-planned-intake">Apport prévu (kcal/j)
+          <input type="number" id="input-planned-intake" min="800" max="6000" step="50" inputmode="numeric" placeholder="ex. 1800">
+        </label>
         <label class="field">Morphologie
           <select id="input-sex">
             <option value="male">Homme</option>
@@ -169,13 +179,13 @@
           <h2>Résumé</h2>
           <p>Valeurs actuelles et variation sur la période sélectionnée.</p>
         </div>
-        <div class="card reading" style="margin-bottom: var(--space-4)">
+        <div data-essential class="card reading" style="margin-bottom: var(--space-4)">
           <div class="card__head"><div><h3>Lecture du jour</h3><p class="card__sub">Ta dernière pesée comparée à ta tendance et à ta fluctuation normale</p></div></div>
           <div id="daily-reading"></div>
         </div>
         <div class="grid grid--kpi" id="kpis"></div>
         <div class="grid grid--kpi hidden" id="lifestyle-kpis" style="margin-top: var(--space-4)"></div>
-        <div class="card" style="margin-top: var(--space-4)">
+        <div data-essential class="card" style="margin-top: var(--space-4)">
           <div class="card__head"><h3>Analyse</h3></div>
           <ul class="insights" id="insights"></ul>
         </div>
@@ -195,10 +205,10 @@
       <section class="section" id="section-weight">
         <div class="section__head">
           <h2>Poids</h2>
-          <p>Chaque pesée, la moyenne glissante sur 7 jours (qui lisse l'eau et le transit), la tendance linéaire et sa projection.</p>
+          <p>Chaque pesée, la tendance lissée (qui gomme l'eau et le transit) avec ta fluctuation normale, et la projection par bilan énergétique avec la zone probable de tes prochaines pesées.</p>
         </div>
         <div class="grid">
-          <div class="card">
+          <div data-essential class="card">
             <div class="card__head">
               <div>
                 <h3>Évolution du poids</h3>
@@ -268,7 +278,7 @@
           <p>Mesures par impédancemétrie : à interpréter en tendance plutôt qu'au jour le jour.</p>
         </div>
         <div class="grid grid--2">
-          <div class="card span-2">
+          <div data-essential class="card span-2">
             <div class="card__head"><div><h3>D'où vient la variation de poids ?</h3><p class="card__sub">Variation cumulée de chaque compartiment depuis la première pesée complète (kg)</p></div></div>
             <div class="chart-legend" id="lg-comp-delta"></div>
             <div class="chart-box chart-box--tall"><canvas id="c-comp-delta"></canvas></div>
@@ -344,7 +354,7 @@
             <div class="chart-legend" id="lg-meas-radar"></div>
             <div class="chart-box chart-box--tall"><canvas id="c-meas-radar"></canvas></div>
           </div>
-          <div class="card">
+          <div data-essential class="card">
             <div class="card__head"><div><h3>Variation par zone</h3><p class="card__sub">cm, premier vs dernier relevé</p></div></div>
             <div class="chart-box chart-box--tall"><canvas id="c-meas-delta"></canvas></div>
           </div>
@@ -400,7 +410,7 @@
           <p>Reconstruction à partir des tours mesurés (chaque tour est converti en largeur et en profondeur). Vue de face : ton côté gauche est à droite de l'écran.</p>
         </div>
         <div class="silhouette-layout">
-          <div class="card">
+          <div data-essential class="card">
             <div class="silhouette-controls">
               <div class="segmented" id="sil-mode" role="group" aria-label="Mode d'affichage">
                 <button type="button" data-mode="overlay" aria-pressed="true">Superposition</button>
@@ -493,7 +503,7 @@
         <div class="grid grid--2" style="margin-top: var(--space-4)">
           <div class="card span-2"><div class="card__head"><div><h3>Apport vs dépense</h3><p class="card__sub">kcal par jour : dépense estimée par la montre (barres) et apport saisi (courbe)</p></div></div><div class="chart-legend" id="lg-energy"></div><div class="chart-box chart-box--tall"><canvas id="c-energy"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Bilan du jour</h3><p class="card__sub">Apport − dépense, jours de saisie complète</p></div></div><div class="chart-legend" id="lg-balance"></div><div class="chart-box"><canvas id="c-balance"></canvas></div></div>
-          <div class="card"><div class="card__head"><div><h3>Perte prédite vs perte réelle</h3><p class="card__sub" id="balance-cumul-sub">kg depuis le début de la période</p></div></div><div class="chart-legend" id="lg-balance-cumul"></div><div class="chart-box"><canvas id="c-balance-cumul"></canvas></div></div>
+          <div data-essential class="card"><div class="card__head"><div><h3>Perte prédite vs perte réelle</h3><p class="card__sub" id="balance-cumul-sub">kg depuis le début de la période</p></div></div><div class="chart-legend" id="lg-balance-cumul"></div><div class="chart-box"><canvas id="c-balance-cumul"></canvas></div></div>
           <div class="card span-2"><div class="card__head"><div><h3>Dépense : montre vs réalité</h3><p class="card__sub">kcal/jour sur 21 jours glissants · « réalité » = apport saisi − bilan déduit de la pente du poids</p></div></div><div class="chart-legend" id="lg-tdee"></div><div class="chart-box"><canvas id="c-tdee"></canvas></div></div>
         </div>
       </section>
@@ -505,7 +515,7 @@
           <p>Pas, temps actif et séances enregistrés par le téléphone et la montre.</p>
         </div>
         <div class="grid grid--2">
-          <div class="card span-2"><div class="card__head"><div><h3>Pas par jour</h3><p class="card__sub">Tous appareils fusionnés</p></div></div><div class="chart-legend" id="lg-steps"></div><div class="chart-box chart-box--tall"><canvas id="c-steps"></canvas></div></div>
+          <div data-essential class="card span-2"><div class="card__head"><div><h3>Pas par jour</h3><p class="card__sub">Tous appareils fusionnés</p></div></div><div class="chart-legend" id="lg-steps"></div><div class="chart-box chart-box--tall"><canvas id="c-steps"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Séances par semaine</h3><p class="card__sub">Minutes par type d'activité</p></div></div><div class="chart-legend" id="lg-sessions-week"></div><div class="chart-box"><canvas id="c-sessions-week"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Minutes actives</h3><p class="card__sub">Temps en mouvement par jour</p></div></div><div class="chart-box"><canvas id="c-active-min"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Pas selon le jour de la semaine</h3><p class="card__sub">Moyenne par jour</p></div></div><div class="chart-box"><canvas id="c-steps-weekday"></canvas></div></div>
@@ -522,7 +532,7 @@
           <p>Nuits enregistrées par la montre (rattachées au jour du réveil).</p>
         </div>
         <div class="grid grid--2">
-          <div class="card span-2"><div class="card__head"><div><h3>Durée et phases du sommeil</h3><p class="card__sub">Heures par nuit</p></div></div><div class="chart-legend" id="lg-sleep-dur"></div><div class="chart-box chart-box--tall"><canvas id="c-sleep-dur"></canvas></div></div>
+          <div data-essential class="card span-2"><div class="card__head"><div><h3>Durée et phases du sommeil</h3><p class="card__sub">Heures par nuit</p></div></div><div class="chart-legend" id="lg-sleep-dur"></div><div class="chart-box chart-box--tall"><canvas id="c-sleep-dur"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Horaires de coucher et de lever</h3><p class="card__sub" id="sleep-times-sub">Une barre par nuit</p></div></div><div class="chart-box chart-box--tall"><canvas id="c-sleep-times"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Hypnogramme</h3><p class="card__sub">Phases des dernières nuits</p></div></div><div class="chart-legend" id="lg-hypnogram"></div><div id="hypnogram"></div></div>
           <div class="card"><div class="card__head"><div><h3>Score et efficacité</h3><p class="card__sub">Sur 100</p></div></div><div class="chart-legend" id="lg-sleep-score"></div><div class="chart-box"><canvas id="c-sleep-score"></canvas></div></div>
@@ -591,6 +601,10 @@
           <div class="card hidden" id="card-lifestyle-table"><div class="card__head"><div><h3>Mode de vie, jour par jour</h3><p class="card__sub">Export santé, du plus récent au plus ancien</p></div></div><div id="table-lifestyle"></div></div>
         </div>
       </section>
+      <div class="view-more">
+        <p class="muted">Nutrition détaillée, composition, mensurations, sommeil, cœur, corrélations, historique, tableaux…</p>
+        <button type="button" class="btn btn--primary" data-view="full">Voir toutes les analyses</button>
+      </div>
     </main>
   </div>
 
@@ -662,6 +676,7 @@
   <script src="js/ui/printReport.js"></script>
   <script src="js/ui/dateFilter.js"></script>
   <script src="js/ui/shareReceiver.js"></script>
+  <script src="js/ui/viewSwitch.js"></script>
   <!-- Application -->
   <script src="js/app.js"></script>
   <script src="js/pwa.js"></script>

@@ -12,7 +12,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v17';
+const CACHE_VERSION = 'v18';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -92,6 +92,7 @@ const APP_FILES = [
   'js/charts/longTermCharts.js',
   'js/ui/lifestylePanels.js',
   'js/ui/shareReceiver.js',
+  'js/ui/viewSwitch.js',
   'js/app.js',
   'js/pwa.js',
 ];

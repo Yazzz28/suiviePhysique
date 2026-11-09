@@ -18,6 +18,7 @@
 
   let printing = false;
   let savedTheme;
+  let savedView;
 
   function fillCover() {
     const cover = document.getElementById('report-cover');
@@ -63,6 +64,9 @@
     SP.silhouette.view.stop();
     savedTheme = root.dataset.theme;
     root.dataset.theme = 'light';
+    // Le rapport contient toujours toutes les analyses, quelle que soit la vue affichée
+    savedView = SP.ui.viewSwitch.current();
+    SP.ui.viewSwitch.set('full', { render: false });
     root.classList.add('is-printing');
     SP.charts.theme.setPrintMode(true);
     SP.app.renderAll();
@@ -77,6 +81,7 @@
     if (savedTheme === undefined) delete root.dataset.theme;
     else root.dataset.theme = savedTheme;
     SP.charts.theme.setPrintMode(false);
+    SP.ui.viewSwitch.set(savedView || 'essential', { render: false });
     SP.app.renderAll();
   }
 

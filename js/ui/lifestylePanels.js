@@ -8,8 +8,8 @@
   const { fmt, fmtDate, isFiniteNumber, dayKey, DAY_MS } = SP.core.utils;
   const kit = SP.charts.kit;
 
-  function kpi(label, value, unit, meta) {
-    return `<div class="card kpi"><span class="kpi__label">${label}</span>
+  function kpi(label, value, unit, meta, essential = false) {
+    return `<div class="card kpi"${essential ? ' data-essential' : ''}><span class="kpi__label">${label}</span>
       <span class="kpi__value">${value}<span class="kpi__unit">${unit}</span></span>
       ${meta ? `<span class="kpi__meta">${meta}</span>` : ''}</div>`;
   }
@@ -24,12 +24,12 @@
     }
     const { energy, nutrition, activity, sleep, stressHeart } = lifestyle;
     const html = [];
-    if (isFiniteNumber(energy.meanIntake)) html.push(kpi('Apport moyen', fmt(energy.meanIntake, 0), 'kcal/j', `${energy.counts.complete} jours de saisie complète`));
-    if (isFiniteNumber(energy.adaptiveTdee)) html.push(kpi('Dépense réelle estimée', fmt(energy.adaptiveTdee, 0), 'kcal/j', `Montre : ${fmt(energy.meanTdee, 0)} kcal/j`));
+    if (isFiniteNumber(energy.meanIntake)) html.push(kpi('Apport moyen', fmt(energy.meanIntake, 0), 'kcal/j', `${energy.counts.complete} jours de saisie complète`, true));
+    if (isFiniteNumber(energy.adaptiveTdee)) html.push(kpi('Dépense réelle estimée', fmt(energy.adaptiveTdee, 0), 'kcal/j', `Montre : ${fmt(energy.meanTdee, 0)} kcal/j`, true));
     if (nutrition && isFiniteNumber(nutrition.proteinPerKgMean))
       html.push(kpi('Protéines', fmt(nutrition.proteinPerKgMean, 2), 'g/kg', `${fmt(nutrition.macros.protein, 0)} g/jour en moyenne`));
     if (isFiniteNumber(activity.stepsMean))
-      html.push(kpi('Pas', fmt(activity.stepsMean, 0), '/ jour', `Objectif ${fmt(activity.stepGoal, 0)} atteint ${activity.goalDays} j sur ${activity.stepDays}`));
+      html.push(kpi('Pas', fmt(activity.stepsMean, 0), '/ jour', `Objectif ${fmt(activity.stepGoal, 0)} atteint ${activity.goalDays} j sur ${activity.stepDays}`, true));
     if (sleep) html.push(kpi('Sommeil', kit.fmtDuration(sleep.durationMean), '', `${sleep.nights} nuits · ${sleep.shortNights} sous 7 h`));
     if (stressHeart && isFiniteNumber(stressHeart.stressMean)) html.push(kpi('Stress moyen', fmt(stressHeart.stressMean, 0), '/ 100', `${stressHeart.stressDays} jours mesurés`));
     if (stressHeart && isFiniteNumber(stressHeart.hrRestMean)) html.push(kpi('FC de repos', fmt(stressHeart.hrRestMean, 0), 'bpm', 'Estimée : heure la plus basse du jour'));

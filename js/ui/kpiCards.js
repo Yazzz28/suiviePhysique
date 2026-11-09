@@ -11,15 +11,15 @@
    * better : 'down' = une baisse est positive, 'up' = une hausse est positive.
    */
   const DEFS = [
-    { key: 'weight', label: 'Poids', unit: 'kg', decimals: 1, better: 'down', src: 'composition' },
-    { key: 'fatKg', label: 'Masse grasse', unit: 'kg', decimals: 1, better: 'down', src: 'composition' },
+    { key: 'weight', label: 'Poids', unit: 'kg', decimals: 1, better: 'down', src: 'composition', essential: true },
+    { key: 'fatKg', label: 'Masse grasse', unit: 'kg', decimals: 1, better: 'down', src: 'composition', essential: true },
     { key: 'fatPct', label: 'Graisse corporelle', unit: '%', decimals: 1, better: 'down', src: 'composition' },
-    { key: 'muscleKg', label: 'Masse musculaire', unit: 'kg', decimals: 1, better: 'up', src: 'composition' },
+    { key: 'muscleKg', label: 'Masse musculaire', unit: 'kg', decimals: 1, better: 'up', src: 'composition', essential: true },
     { key: 'leanKg', label: 'Masse maigre', unit: 'kg', decimals: 1, better: 'up', src: 'composition' },
     { key: 'bmi', label: 'IMC', unit: '', decimals: 1, better: 'down', src: 'composition' },
     { key: 'visceral', label: 'Graisse viscérale', unit: '', decimals: 0, better: 'down', src: 'composition' },
     { key: 'bmr', label: 'Métabolisme de base', unit: 'kcal', decimals: 0, better: null, src: 'composition' },
-    { key: 'waist', label: 'Tour de taille', unit: 'cm', decimals: 1, better: 'down', src: 'measurements' },
+    { key: 'waist', label: 'Tour de taille', unit: 'cm', decimals: 1, better: 'down', src: 'measurements', essential: true },
     { key: 'abdomen', label: "Tour d'abdomen", unit: 'cm', decimals: 1, better: 'down', src: 'measurements' },
     { key: 'hip', label: 'Tour de hanches', unit: 'cm', decimals: 1, better: 'down', src: 'measurements' },
     { key: 'whtr', label: 'Taille / hauteur', unit: '', decimals: 2, better: 'down', src: 'measurements' },
@@ -31,10 +31,10 @@
     return good ? 'delta--good' : 'delta--bad';
   }
 
-  function card({ label, value, unit, decimals, delta, deltaUnit, better, meta }) {
+  function card({ label, value, unit, decimals, delta, deltaUnit, better, meta, essential }) {
     const cls = deltaClass(delta, better);
     const arrow = !isFiniteNumber(delta) || Math.abs(delta) < 1e-9 ? '' : delta < 0 ? '▼' : '▲';
-    return `<div class="card kpi">
+    return `<div class="card kpi"${essential ? ' data-essential' : ''}>
       <span class="kpi__label">${label}</span>
       <span class="kpi__value">${fmt(value, decimals)}<span class="kpi__unit">${unit}</span></span>
       ${
@@ -72,7 +72,7 @@
              aria-label="Progression vers l'objectif"><span style="width:${(progress * 100).toFixed(1)}%"></span></div>
            <span class="kpi__meta">${Math.round(progress * 100)} % du chemin depuis ${fmt(startWeight, 1)} kg</span>`;
 
-    return `<div class="card kpi kpi--wide"><span class="kpi__label">Objectif ${fmt(target, 1)} kg</span>
+    return `<div class="card kpi kpi--wide" data-essential><span class="kpi__label">Objectif ${fmt(target, 1)} kg</span>
       <span class="kpi__value">${lw ? fmt(Math.max(0, lw.weight - target), 1) : '—'}<span class="kpi__unit">kg restants</span></span>
       ${gauge}
       <span class="kpi__meta">${meta}</span></div>`;
@@ -101,6 +101,7 @@
       html.push(
         card({
           label: 'Rythme (14 j)',
+          essential: true,
           value: recent.slopePerWeek,
           unit: 'kg/sem',
           decimals: 2,

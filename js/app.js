@@ -80,7 +80,8 @@
     // Qualité des mensurations : analysée sur tous les relevés (tendance plus robuste)
     const quality = SP.analysis.quality.analyze(v.allMeasurements);
     const usable = v.settings.excludeOutliers ? SP.analysis.quality.clean(v.measurements, quality) : v.measurements;
-    const projection = SP.analysis.projection.build({ daily, composition });
+    const weightTrend = SP.analysis.trends.smooth(daily, 'weight');
+    const projection = SP.analysis.projection.build({ daily, composition, w0: weightTrend ? weightTrend.last : null });
     let lifestyle = null;
     if (v.lifestyle && v.lifestyleRange) {
       try {
@@ -97,6 +98,7 @@
     }
     return {
       lifestyle,
+      weightTrend,
       compositionSource: v.compositionSource,
       composition,
       daily,
@@ -186,6 +188,7 @@
       SP.ui.lifestylePanels.renderTable($('table-lifestyle'), ls);
     });
     hideEmptyChartCards();
+    SP.ui.viewSwitch.apply();
   }
 
   /** Cartes de graphiques : réaffichées avant chaque rendu… */
@@ -247,6 +250,8 @@
     const s = state.get().settings;
     $('input-height').value = isFiniteNumber(s.heightCm) ? s.heightCm : '';
     $('input-target').value = isFiniteNumber(s.targetWeight) ? s.targetWeight : '';
+    $('input-target-date').value = s.targetDate ? SP.core.utils.dayKey(s.targetDate) : '';
+    $('input-planned-intake').value = isFiniteNumber(s.plannedIntake) ? s.plannedIntake : '';
     $('input-sex').value = s.sex;
     $('input-exclude-outliers').checked = s.excludeOutliers;
     document.querySelectorAll('[data-setting="includeIncompleteMeals"]').forEach((el) => {
@@ -265,6 +270,14 @@
       else syncSettingsInputs();
     });
     $('input-target').addEventListener('change', (e) => state.setSetting('targetWeight', num(e.target)));
+    $('input-target-date').addEventListener('change', (e) => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value);
+      state.setSetting('targetDate', m ? new Date(+m[1], +m[2] - 1, +m[3]) : null);
+    });
+    $('input-planned-intake').addEventListener('change', (e) => {
+      const v = num(e.target);
+      state.setSetting('plannedIntake', v && v >= 500 && v <= 8000 ? v : null);
+    });
     $('input-sex').addEventListener('change', (e) => state.setSetting('sex', e.target.value));
     $('input-exclude-outliers').addEventListener('change', (e) => state.setSetting('excludeOutliers', e.target.checked));
     // Même réglage affiché en Nutrition et en Bilan énergétique : les interrupteurs restent synchronisés
@@ -327,6 +340,7 @@
     });
     SP.ui.templates.bind($('welcome'));
     SP.ui.dateFilter.bind($('period-filter'));
+    SP.ui.viewSwitch.bind();
     // Fichiers reçus par Partager › Suivi Physique (Android, app installée)
     SP.ui.shareReceiver.init(handleFiles, (message) => SP.ui.dropzone.renderError($('file-status'), message));
     $('btn-reload').addEventListener('click', reset);

@@ -109,6 +109,70 @@
     },
   };
 
+  /**
+   * Plugin : lignes verticales annotées (ex. « Aujourd'hui »).
+   * options.plugins.spVLines = { lines: [{ x, label, color }] }
+   */
+  const vLines = {
+    id: 'spVLines',
+    afterDatasetsDraw(chart, _args, opts) {
+      const list = opts && opts.lines;
+      if (!list || !list.length || !chart.scales.x) return;
+      const { top, bottom, left, right } = chart.chartArea;
+      const ctx = chart.ctx;
+      ctx.save();
+      list.forEach((l) => {
+        const x = chart.scales.x.getPixelForValue(l.x);
+        if (x < left || x > right) return;
+        ctx.strokeStyle = l.color;
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+        if (l.label) {
+          ctx.setLineDash([]);
+          ctx.fillStyle = l.color;
+          ctx.font = '11px system-ui, sans-serif';
+          ctx.textAlign = x > right - 60 ? 'right' : 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillText(l.label, x + (x > right - 60 ? -4 : 4), top + 2);
+        }
+      });
+      ctx.restore();
+    },
+  };
+
+  /**
+   * Plugin : ombrage des samedis et dimanches sur un axe temporel.
+   * options.plugins.spWeekends = { color }
+   */
+  const weekends = {
+    id: 'spWeekends',
+    beforeDatasetsDraw(chart, _args, opts) {
+      if (!opts || !opts.color || !chart.scales.x) return;
+      const xs = chart.scales.x;
+      const { top, bottom, left, right } = chart.chartArea;
+      const ctx = chart.ctx;
+      const start = new Date(xs.min);
+      const day = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      // Recule au samedi précédent
+      day.setDate(day.getDate() - ((day.getDay() + 1) % 7));
+      ctx.save();
+      ctx.fillStyle = opts.color;
+      while (day.getTime() < xs.max) {
+        const sat = day.getTime();
+        const mon = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 2).getTime();
+        const x1 = Math.max(left, xs.getPixelForValue(sat));
+        const x2 = Math.min(right, xs.getPixelForValue(mon));
+        if (x2 > x1) ctx.fillRect(x1, top, x2 - x1, bottom - top);
+        day.setDate(day.getDate() + 7);
+      }
+      ctx.restore();
+    },
+  };
+
   let registered = false;
   let printMode = false;
   let screenPixelRatio = null;
@@ -126,7 +190,7 @@
     const t = tokens();
     const C = window.Chart;
     if (!registered) {
-      C.register(crosshair, bands);
+      C.register(crosshair, bands, vLines, weekends);
       registered = true;
     }
     C.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

@@ -108,3 +108,5 @@
 .is-printing .heatgrid { font-size: 7px; }
 .is-printing .rank-list__item { font-size: 9px; }
 .is-printing .file-status__details { display: none; }
+
+.is-printing .view-more { display: none !important; }

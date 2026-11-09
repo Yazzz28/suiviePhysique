@@ -143,7 +143,49 @@
     return stdDev(dod.filter((d) => d.gap === 1).map((d) => d.delta));
   }
 
+  /**
+   * Tendance lissée sans retard : régression linéaire locale pondérée
+   * (noyau gaussien de largeur `bandwidthDays`) évaluée à chaque pesée.
+   * Contrairement à une moyenne glissante, elle ne « traîne » pas derrière
+   * une perte régulière, y compris au dernier point. Retourne aussi
+   * l'écart-type des pesées autour de la tendance (fluctuation normale).
+   */
+  function smooth(daily, key, bandwidthDays = 6) {
+    const pts = daily.filter((r) => isFiniteNumber(r[key]));
+    if (pts.length < 3) return null;
+    const t = pts.map((r) => r.date.getTime() / DAY_MS);
+    const span = 3 * bandwidthDays;
+    const values = pts.map((r, i) => {
+      let sw = 0;
+      let sx = 0;
+      let sy = 0;
+      let sxx = 0;
+      let sxy = 0;
+      for (let j = 0; j < pts.length; j++) {
+        const dx = t[j] - t[i];
+        if (Math.abs(dx) > span) continue;
+        const w = Math.exp(-0.5 * (dx / bandwidthDays) ** 2);
+        const y = pts[j][key];
+        sw += w;
+        sx += w * dx;
+        sy += w * y;
+        sxx += w * dx * dx;
+        sxy += w * dx * y;
+      }
+      const den = sw * sxx - sx * sx;
+      // Pente indéterminée (points trop proches) : moyenne pondérée
+      return Math.abs(den) < 1e-9 ? sy / sw : (sy * sxx - sx * sxy) / den;
+    });
+    const residuals = pts.map((r, i) => r[key] - values[i]);
+    return {
+      points: pts.map((r, i) => ({ date: r.date, value: values[i], raw: r[key] })),
+      sd: Math.max(0.2, stdDev(residuals) || 0), // plancher : précision de la balance
+      last: values[values.length - 1],
+    };
+  }
+
   SP.analysis.trends = {
+    smooth,
     trend,
     recentTrend,
     rollingTrend,
