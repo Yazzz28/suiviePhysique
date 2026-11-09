@@ -25,6 +25,8 @@
     const st = SP.core.state.get();
     const v = SP.core.state.view();
     const dates = [...v.composition, ...v.measurements].map((r) => r.date.getTime());
+    if (v.lifestyleRange) dates.push(v.lifestyleRange.from.getTime(), v.lifestyleRange.to.getTime());
+    const exportDays = v.lifestyleRange ? Math.round((v.lifestyleRange.to - v.lifestyleRange.from) / 86400000) : 0;
     const period = dates.length
       ? `du ${fmtDate(new Date(Math.min(...dates)), 'long')} au ${fmtDate(new Date(Math.max(...dates)), 'long')}`
       : '—';
@@ -44,11 +46,13 @@
     cover.innerHTML = `
       <h1>Suivi Physique : rapport</h1>
       <p class="report-cover__meta">Généré le ${fmtDate(new Date(), 'long')} · données ${period} (filtre « ${escapeHtml(periodLabel)} »)</p>
-      <p class="report-cover__meta">${v.composition.length} pesées · ${v.measurements.length} relevés de mensurations · ${settings.map(escapeHtml).join(' · ')}</p>
+      <p class="report-cover__meta">${v.composition.length} pesées${v.compositionSource === 'export' ? ' (export santé)' : ''} · ${v.measurements.length} relevés de mensurations${
+        exportDays ? ` · ${exportDays} jours de données santé (nutrition, activité, sommeil, stress, cœur)` : ''
+      } · ${settings.map(escapeHtml).join(' · ')}</p>
       <h2>Sommaire</h2>
       <ol class="report-cover__toc">${sections.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ol>
-      <p class="report-cover__note">Données traitées localement dans le navigateur. Composition corporelle mesurée par impédancemétrie et
-        projections : à interpréter comme des tendances, pas comme des mesures exactes.</p>`;
+      <p class="report-cover__note">Données traitées localement dans le navigateur. Composition corporelle mesurée par impédancemétrie,
+        dépense énergétique estimée par la montre, corrélations et projections : à interpréter comme des tendances, pas comme des mesures exactes.</p>`;
   }
 
   /** Passe en mode impression (idempotent). */

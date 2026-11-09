@@ -10,7 +10,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v14';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -69,6 +69,26 @@ const APP_FILES = [
   'js/ui/dailyReadingCard.js',
   'js/ui/printReport.js',
   'js/ui/dateFilter.js',
+  'js/parsers/samsung/samsungCsv.js',
+  'js/parsers/samsung/samsungSources.js',
+  'js/parsers/samsung/samsungLoader.js',
+  'js/analysis/lifestyle/dailyLifestyle.js',
+  'js/analysis/lifestyle/energyBalance.js',
+  'js/analysis/lifestyle/nutritionStats.js',
+  'js/analysis/lifestyle/activityStats.js',
+  'js/analysis/lifestyle/sleepStressStats.js',
+  'js/analysis/lifestyle/correlations.js',
+  'js/analysis/lifestyle/longTerm.js',
+  'js/analysis/lifestyle/lifestyle.js',
+  'js/charts/lifestyleKit.js',
+  'js/charts/nutritionCharts.js',
+  'js/charts/energyCharts.js',
+  'js/charts/activityCharts.js',
+  'js/charts/sleepCharts.js',
+  'js/charts/heartCharts.js',
+  'js/charts/correlationCharts.js',
+  'js/charts/longTermCharts.js',
+  'js/ui/lifestylePanels.js',
   'js/app.js',
   'js/pwa.js',
 ];

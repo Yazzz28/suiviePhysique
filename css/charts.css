@@ -257,3 +257,56 @@
   outline-offset: -2px;
   color: var(--serious);
 }
+
+/* =========================================================
+   Mode de vie (export santé)
+   ========================================================= */
+
+/* ---- Classement (aliments) ---- */
+.rank-list { list-style: none; display: grid; gap: 6px; padding: 0; margin: 0; counter-reset: rank; }
+.rank-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(60px, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.85rem;
+}
+.rank-list__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-list__bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.rank-list__bar span { display: block; height: 100%; background: var(--series-2); border-radius: 4px; }
+.rank-list__value { color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank-list__note { font-size: 0.8rem; margin-top: var(--space-3); }
+
+/* ---- Carte de chaleur heure × jour ---- */
+.heatgrid {
+  display: grid;
+  grid-template-columns: 34px repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.heatgrid__hour { text-align: left; white-space: nowrap; }
+.heatgrid__day { align-self: center; }
+.heatgrid__cell { aspect-ratio: 1; min-height: 10px; border-radius: 2px; background: var(--surface-2); }
+
+/* ---- Hypnogramme ---- */
+.hypno { width: 100%; height: auto; display: block; }
+.hypno__label { font-size: 11px; fill: var(--text-secondary); dominant-baseline: middle; }
+.hypno__tick { font-size: 10px; fill: var(--text-muted); text-anchor: middle; }
+.hypno__grid { stroke: var(--grid); stroke-width: 1; }
+
+/* ---- Matrice de corrélations ---- */
+.corr { border-collapse: separate; border-spacing: 2px; font-size: 0.78rem; width: 100%; }
+.corr th { font-weight: 500; color: var(--text-secondary); padding: 4px 6px; text-align: left; white-space: nowrap; }
+.corr thead th { text-align: center; font-size: 0.72rem; }
+.corr td {
+  text-align: center;
+  padding: 6px 4px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  min-width: 42px;
+}
+.corr td.corr__self { background: transparent; color: var(--text-muted); }
+.corr td.corr__na { color: var(--text-muted); }
+.corr td:last-child { outline: 1px solid var(--axis); outline-offset: -1px; }

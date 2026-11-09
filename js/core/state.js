@@ -19,6 +19,8 @@
   const initial = () => ({
     composition: [], // pesées, triées par date croissante
     measurements: [], // mensurations, triées par date croissante
+    lifestyle: null, // tables de l'export Samsung Health (nutrition, activité, sommeil...)
+    fallbackComposition: [], // pesées de l'export santé, utilisées sans fichier de pesées
     files: [], // { name, type, count, error }
     period: 'all',
     settings: {
@@ -40,10 +42,33 @@
     return records.filter((r) => r.date >= fromDay);
   }
 
+  /** Pesées affichées : le fichier de pesées prime, sinon celles de l'export santé. */
+  function composition() {
+    return state.composition.length ? state.composition : state.fallbackComposition;
+  }
+
   /** Date la plus récente toutes sources confondues : référence des filtres. */
   function latestDate() {
-    const dates = [...state.composition, ...state.measurements].map((r) => r.date.getTime());
+    const dates = [...composition(), ...state.measurements].map((r) => r.date.getTime());
+    const lifestyleLatest = state.lifestyle && SP.analysis.lifestyle.latestDate(state.lifestyle);
+    if (lifestyleLatest) dates.push(lifestyleLatest.getTime());
     return dates.length ? new Date(Math.max(...dates)) : null;
+  }
+
+  /**
+   * Bornes de la période pour les données « mode de vie ». « Tout » démarre à
+   * la première pesée (début du suivi), sinon aux 90 derniers jours de l'export.
+   */
+  function lifestyleRange(period, ref) {
+    if (!state.lifestyle || !ref) return null;
+    const to = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 23, 59, 59);
+    const days = PERIODS[period] && PERIODS[period].days;
+    const comp = composition();
+    let from;
+    if (days) from = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - (days - 1));
+    else if (comp.length) from = new Date(comp[0].date.getFullYear(), comp[0].date.getMonth(), comp[0].date.getDate());
+    else from = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - 89);
+    return { from, to };
   }
 
   SP.core.state = {
@@ -58,11 +83,17 @@
       SP.bus.emit('state:reset');
     },
 
-    setData({ composition, measurements, files }) {
+    setData({ composition, measurements, lifestyle, fallbackComposition, files }) {
       state.composition = composition || [];
       state.measurements = measurements || [];
+      state.lifestyle = lifestyle || null;
+      state.fallbackComposition = fallbackComposition || [];
       state.files = files || [];
       SP.bus.emit('state:data');
+    },
+
+    hasData() {
+      return composition().length > 0 || state.measurements.length > 0 || !!state.lifestyle;
     },
 
     setPeriod(period) {
@@ -79,10 +110,14 @@
     /** Données filtrées selon la période active. */
     view() {
       const ref = latestDate();
+      const comp = composition();
       return {
-        composition: filterByPeriod(state.composition, state.period, ref),
+        composition: filterByPeriod(comp, state.period, ref),
         measurements: filterByPeriod(state.measurements, state.period, ref),
-        allComposition: state.composition,
+        compositionSource: state.composition.length ? 'file' : comp.length ? 'export' : null,
+        lifestyle: state.lifestyle,
+        lifestyleRange: lifestyleRange(state.period, ref),
+        allComposition: comp,
         allMeasurements: state.measurements,
         settings: state.settings,
         period: state.period,

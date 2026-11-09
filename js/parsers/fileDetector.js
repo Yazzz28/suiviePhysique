@@ -58,5 +58,5 @@
     return [...map.values()].sort((a, b) => a.date - b.date);
   }
 
-  SP.parsers.fileDetector = { loadFiles, detect };
+  SP.parsers.fileDetector = { loadFiles, detect, mergeByDate };
 })(window.SP);

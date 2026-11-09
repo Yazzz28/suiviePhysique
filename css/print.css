@@ -100,3 +100,11 @@
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
+
+/* ---- Mode de vie ---- */
+.is-printing .corr { font-size: 7px; border-spacing: 1px; }
+.is-printing .corr td { min-width: 0; padding: 3px 1px; }
+.is-printing .corr th { padding: 2px; white-space: normal; }
+.is-printing .heatgrid { font-size: 7px; }
+.is-printing .rank-list__item { font-size: 9px; }
+.is-printing .file-status__details { display: none; }

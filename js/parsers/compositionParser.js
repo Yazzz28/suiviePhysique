@@ -109,5 +109,5 @@
     return records;
   }
 
-  SP.parsers.composition = { isComposition, parse, LABELS, TEMPLATE_HEADER };
+  SP.parsers.composition = { isComposition, parse, FIELDS, LABELS, TEMPLATE_HEADER };
 })(window.SP);

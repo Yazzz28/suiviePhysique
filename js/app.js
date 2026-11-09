@@ -11,16 +11,39 @@
 
   /* ---------------- Chargement ---------------- */
 
+  /**
+   * Un seul point d'entrée pour tout ce qui est déposé : dossier d'export
+   * Samsung Health, fichiers de pesées / mensurations, ou un mélange.
+   * Les nouveaux fichiers s'ajoutent à ceux déjà chargés.
+   */
   async function handleFiles(files) {
     const status = $('file-status');
     status.innerHTML = '<p class="muted">Lecture des fichiers…</p>';
-    const result = await SP.parsers.fileDetector.loadFiles(files);
-    SP.ui.dropzone.renderStatus(status, result.files);
+    const exp = await SP.parsers.samsung.loader.load(files, (done, total, label) =>
+      SP.ui.dropzone.renderProgress(status, done, total, label)
+    );
+    const body = exp.others.length
+      ? await SP.parsers.fileDetector.loadFiles(exp.others)
+      : { composition: [], measurements: [], files: [] };
+    SP.ui.dropzone.renderStatus(status, body.files, exp.tables.length ? exp : null);
 
-    if (!result.composition.length && !result.measurements.length) return;
+    const cur = state.get();
+    const { mergeByDate } = SP.parsers.fileDetector;
+    const composition = mergeByDate(cur.composition, body.composition);
+    const measurements = mergeByDate(cur.measurements, body.measurements);
+    const hasExport = exp.tables.some((t) => t.count > 0);
+    const lifestyle = hasExport ? SP.parsers.samsung.loader.merge(cur.lifestyle || {}, exp.data) : cur.lifestyle;
+    if (!composition.length && !measurements.length && !lifestyle) return;
 
-    state.setData(result);
-    const height = metrics.deriveHeightCm(result.composition);
+    const height =
+      metrics.deriveHeightCm(composition) || (lifestyle && SP.analysis.lifestyle.latestHeight(lifestyle)) || cur.settings.heightCm;
+    state.setData({
+      composition,
+      measurements,
+      lifestyle,
+      fallbackComposition: lifestyle ? SP.analysis.lifestyle.fallbackComposition(lifestyle.weights, height) : [],
+      files: [...cur.files, ...body.files, ...exp.tables.map((t) => ({ name: t.name, type: 'export', count: t.count, error: t.error }))],
+    });
     if (height) state.setSetting('heightCm', height, { silent: true });
     syncSettingsInputs();
     showDashboard(true);
@@ -58,7 +81,22 @@
     const quality = SP.analysis.quality.analyze(v.allMeasurements);
     const usable = v.settings.excludeOutliers ? SP.analysis.quality.clean(v.measurements, quality) : v.measurements;
     const projection = SP.analysis.projection.build({ daily, composition });
+    let lifestyle = null;
+    if (v.lifestyle && v.lifestyleRange) {
+      try {
+        lifestyle = SP.analysis.lifestyle.build({
+          data: v.lifestyle,
+          range: v.lifestyleRange,
+          allDaily,
+          rho: projection ? projection.rho : null,
+        });
+      } catch (err) {
+        console.error('[SuiviPhysique] Analyse de l\'export santé impossible', err);
+      }
+    }
     return {
+      lifestyle,
+      compositionSource: v.compositionSource,
       composition,
       daily,
       allDaily,
@@ -85,6 +123,7 @@
   function renderAll() {
     SP.charts.theme.applyDefaults();
     SP.charts.theme.destroyAll();
+    resetChartCards();
     const ctx = buildContext();
     const hasComp = ctx.composition.length > 0;
     const hasFull = ctx.composition.some((r) => r.hasComposition);
@@ -94,10 +133,23 @@
     toggleSection('composition', hasFull);
     toggleSection('measurements', hasMeas);
     toggleSection('silhouette', hasMeas);
+    const ls = ctx.lifestyle;
+    toggleSection('nutrition', !!ls && ls.has.nutrition);
+    toggleSection('energy', !!ls && ls.has.energy);
+    toggleSection('activity', !!ls && ls.has.activity);
+    toggleSection('sleep', !!ls && ls.has.sleep);
+    toggleSection('heart', !!ls && ls.has.heart);
+    toggleSection('correlations', !!ls && !!ls.correlations);
+    toggleSection('history', !!ls && !!ls.history && ls.history.metrics.length > 0);
 
     renderSubtitle(ctx);
-    safe('lecture du jour', () => SP.ui.dailyReadingCard.render($('daily-reading'), SP.analysis.dailyReading.read(ctx.allDaily)));
+    safe('lecture du jour', () => {
+      const reading = SP.analysis.dailyReading.read(ctx.allDaily);
+      const context = reading ? SP.ui.lifestylePanels.readingContext(ls, reading.date) : null;
+      SP.ui.dailyReadingCard.render($('daily-reading'), reading, context);
+    });
     safe('kpi', () => SP.ui.kpiCards.render($('kpis'), ctx));
+    safe('kpi mode de vie', () => SP.ui.lifestylePanels.renderKpis($('lifestyle-kpis'), ls));
     safe('insights', () => renderInsights(ctx));
     safe('jalons', () => SP.ui.summaryPanels.renderMilestones($('milestones'), ctx.records));
     safe('bilan mensuel', () => SP.ui.summaryPanels.renderMonthly($('monthly'), SP.analysis.milestones.monthly(ctx.daily, ctx.measurements)));
@@ -116,10 +168,44 @@
       safe('indices de mensurations', () => SP.charts.measurementIndices.render(ctx));
       safe('silhouette', () => SP.silhouette.view.render(ctx));
     }
+    if (ls) {
+      if (ls.has.nutrition) safe('nutrition', () => SP.charts.nutrition.render(ctx));
+      if (ls.has.energy) safe('bilan énergétique', () => SP.charts.energy.render(ctx));
+      if (ls.has.activity) safe('activité', () => SP.charts.activity.render(ctx));
+      if (ls.has.sleep) safe('sommeil', () => SP.charts.sleep.render(ctx));
+      if (ls.has.heart) safe('stress et cœur', () => SP.charts.heart.render(ctx));
+      if (ls.correlations) safe('corrélations', () => SP.charts.correlations.render(ctx));
+      if (ls.history) safe('historique', () => SP.charts.longTerm.render(ctx));
+    }
     safe('tableaux', () => {
+      toggleCard('table-measurements', ctx.rawMeasurements.length > 0);
+      toggleCard('table-composition', ctx.composition.length > 0);
       SP.ui.tables.renderMeasurements($('table-measurements'), ctx.rawMeasurements, ctx.quality);
       SP.ui.tables.renderComposition($('table-composition'), ctx.composition);
+      SP.ui.lifestylePanels.renderTable($('table-lifestyle'), ls);
     });
+    hideEmptyChartCards();
+  }
+
+  /** Cartes de graphiques : réaffichées avant chaque rendu… */
+  function resetChartCards() {
+    document.querySelectorAll('#dashboard .card').forEach((card) => {
+      if (card.querySelector('canvas')) card.classList.remove('hidden');
+    });
+  }
+
+  /** …puis masquées si aucun de leurs graphiques n'a de données (métrique absente des fichiers). */
+  function hideEmptyChartCards() {
+    if (!window.Chart) return;
+    document.querySelectorAll('#dashboard .section:not(.hidden) .card').forEach((card) => {
+      const canvases = [...card.querySelectorAll('canvas')];
+      if (canvases.length && !canvases.some((c) => window.Chart.getChart(c))) card.classList.add('hidden');
+    });
+  }
+
+  function toggleCard(id, visible) {
+    const card = $(id) && $(id).closest('.card');
+    if (card) card.classList.toggle('hidden', !visible);
   }
 
   function toggleSection(name, visible) {
@@ -129,13 +215,17 @@
     if (link) link.classList.toggle('hidden', !visible);
   }
 
-  function renderSubtitle({ composition, measurements }) {
+  function renderSubtitle({ composition, measurements, lifestyle, compositionSource }) {
     const dates = [...composition, ...measurements].map((r) => r.date.getTime());
+    if (lifestyle) dates.push(lifestyle.range.from.getTime(), lifestyle.range.to.getTime());
     if (!dates.length) return;
     const from = new Date(Math.min(...dates));
     const to = new Date(Math.max(...dates));
-    $('summary-subtitle').textContent =
-      `Du ${fmtDate(from, 'long')} au ${fmtDate(to, 'long')} · ${composition.length} pesées · ${measurements.length} relevés de mensurations`;
+    const parts = [`Du ${fmtDate(from, 'long')} au ${fmtDate(to, 'long')}`];
+    if (composition.length) parts.push(`${composition.length} pesées${compositionSource === 'export' ? ' (export santé)' : ''}`);
+    if (measurements.length) parts.push(`${measurements.length} relevés de mensurations`);
+    if (lifestyle) parts.push(`${lifestyle.days.length} jours de données santé`);
+    $('summary-subtitle').textContent = parts.join(' · ');
   }
 
   function renderInsights(ctx) {
@@ -184,10 +274,10 @@
         root.dataset.theme === 'dark' ||
         (!root.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
       root.dataset.theme = isDark ? 'light' : 'dark';
-      if (state.get().composition.length || state.get().measurements.length) renderAll();
+      if (state.hasData()) renderAll();
     });
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (!document.documentElement.dataset.theme && state.get().files.length) renderAll();
+      if (!document.documentElement.dataset.theme && state.hasData()) renderAll();
     });
   }
 
@@ -216,7 +306,13 @@
       window.Chart.register(window.ChartZoom);
     }
 
-    SP.ui.dropzone.bind({ zone: $('dropzone'), input: $('file-input'), onFiles: handleFiles });
+    SP.ui.dropzone.bind({
+      zone: $('dropzone'),
+      input: $('file-input'),
+      folderInput: $('folder-input'),
+      folderButton: $('btn-folder'),
+      onFiles: handleFiles,
+    });
     SP.ui.templates.bind($('welcome'));
     SP.ui.dateFilter.bind($('period-filter'));
     $('btn-reload').addEventListener('click', reset);
@@ -227,7 +323,7 @@
 
     SP.bus.on('state:period', renderAll);
     SP.bus.on('state:settings', () => {
-      if (state.get().files.length) renderAll();
+      if (state.hasData()) renderAll();
     });
   }
 

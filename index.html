@@ -56,16 +56,24 @@
   <!-- ============ Accueil / dépôt ============ -->
   <section class="welcome" id="welcome">
     <h1>Dépose tes exports</h1>
-    <p>Le fichier des pesées (composition corporelle) et/ou le fichier des mensurations. Le type est détecté automatiquement.</p>
+    <p>Pesées, mensurations et/ou le dossier d'export Samsung Health (repas, activité, sommeil, stress, cœur), séparément ou tout d'un coup. Le type de chaque fichier est reconnu automatiquement.</p>
 
     <div class="dropzone" id="dropzone">
       <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6m0 0-3 3m3-3 3 3"/>
       </svg>
-      <p class="dropzone__title">Glisse les fichiers .csv ici</p>
-      <p class="dropzone__hint">ou clique pour les sélectionner (plusieurs fichiers possibles)</p>
+      <p class="dropzone__title">Glisse tes fichiers .csv ou ton dossier d'export ici</p>
+      <p class="dropzone__hint">ou clique pour choisir des fichiers (plusieurs possibles)</p>
       <input type="file" id="file-input" accept=".csv,text/csv,text/plain" multiple aria-label="Choisir les fichiers CSV">
+      <button type="button" class="btn dropzone__folder" id="btn-folder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Choisir un dossier
+      </button>
     </div>
+    <input type="file" id="folder-input" webkitdirectory multiple hidden aria-label="Choisir un dossier d'export">
+    <p class="dropzone__note">Export Samsung Health : dans l'app, Paramètres › Télécharger les données personnelles, puis dépose le dossier décompressé.
+      Tu peux aussi mettre tes fichiers de pesées et de mensurations dans le même dossier. Le navigateur demande de confirmer l'import d'un dossier :
+      seuls les fichiers utiles (≈ 25 tableaux) sont lus, en local ; contacts, badges et préférences ne sont jamais ouverts.</p>
 
     <div class="file-status" id="file-status" aria-live="polite"></div>
 
@@ -113,6 +121,13 @@
           <a class="app-nav__link" href="#section-composition">Composition</a>
           <a class="app-nav__link" href="#section-measurements">Mensurations</a>
           <a class="app-nav__link" href="#section-silhouette">Silhouette</a>
+          <a class="app-nav__link hidden" href="#section-nutrition">Nutrition</a>
+          <a class="app-nav__link hidden" href="#section-energy">Énergie</a>
+          <a class="app-nav__link hidden" href="#section-activity">Activité</a>
+          <a class="app-nav__link hidden" href="#section-sleep">Sommeil</a>
+          <a class="app-nav__link hidden" href="#section-heart">Cœur</a>
+          <a class="app-nav__link hidden" href="#section-correlations">Corrélations</a>
+          <a class="app-nav__link hidden" href="#section-history">Historique</a>
           <a class="app-nav__link" href="#section-data">Données</a>
         </div>
         <div class="segmented" id="period-filter" role="group" aria-label="Période"></div>
@@ -152,6 +167,7 @@
           <div id="daily-reading"></div>
         </div>
         <div class="grid grid--kpi" id="kpis"></div>
+        <div class="grid grid--kpi hidden" id="lifestyle-kpis" style="margin-top: var(--space-4)"></div>
         <div class="card" style="margin-top: var(--space-4)">
           <div class="card__head"><h3>Analyse</h3></div>
           <ul class="insights" id="insights"></ul>
@@ -436,6 +452,125 @@
         </div>
       </section>
 
+      <!-- ===== Nutrition ===== -->
+      <section class="section hidden" id="section-nutrition">
+        <div class="section__head">
+          <h2>Nutrition</h2>
+          <p>Repas saisis dans Samsung Health. Les moyennes ne prennent que les jours de saisie complète.</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card span-2"><div class="card__head"><div><h3>Apport calorique par jour</h3><p class="card__sub">kcal saisies · gris = jour probablement incomplet</p></div></div><div class="chart-legend" id="lg-kcal-in"></div><div class="chart-box chart-box--tall"><canvas id="c-kcal-in"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Macronutriments</h3><p class="card__sub">kcal apportées par les protéines, glucides et lipides (jours complets)</p></div></div><div class="chart-legend" id="lg-macros"></div><div class="chart-box"><canvas id="c-macros"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Répartition de l'énergie</h3><p class="card__sub">Part moyenne de chaque macronutriment vs plage de référence</p></div></div><div class="chart-legend" id="lg-macro-share"></div><div class="chart-box"><canvas id="c-macro-share"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Protéines par kg de poids</h3><p class="card__sub">g de protéines / kg de poids du jour</p></div></div><div class="chart-box"><canvas id="c-protein-kg"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Calories par repas</h3><p class="card__sub">Moyenne par jour de saisie complète</p></div></div><div class="chart-box"><canvas id="c-meals"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Apport selon le jour de la semaine</h3><p class="card__sub">Moyenne des jours complets</p></div></div><div class="chart-box"><canvas id="c-nutri-weekday"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Aliments les plus caloriques</h3><p class="card__sub">kcal cumulées sur la période</p></div></div><div id="top-foods"></div></div>
+        </div>
+        <div class="grid grid--3" style="margin-top: var(--space-4)">
+          <div class="card"><div class="card__head"><div><h3>Fibres</h3><p class="card__sub">g par jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-fiber"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Sucres</h3><p class="card__sub">g par jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-sugar"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Sodium</h3><p class="card__sub">mg par jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-sodium"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Bilan énergétique ===== -->
+      <section class="section hidden" id="section-energy">
+        <div class="section__head">
+          <h2>Bilan énergétique</h2>
+          <p>Ce que tu manges vs ce que tu dépenses, et ce que ta courbe de poids en dit. La dépense de la montre est une estimation.</p>
+        </div>
+        <div class="grid grid--kpi" id="energy-kpis"></div>
+        <p class="chart-hint" id="energy-window"></p>
+        <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div class="card span-2"><div class="card__head"><div><h3>Apport vs dépense</h3><p class="card__sub">kcal par jour : dépense estimée par la montre (barres) et apport saisi (courbe)</p></div></div><div class="chart-legend" id="lg-energy"></div><div class="chart-box chart-box--tall"><canvas id="c-energy"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Bilan du jour</h3><p class="card__sub">Apport − dépense, jours de saisie complète</p></div></div><div class="chart-legend" id="lg-balance"></div><div class="chart-box"><canvas id="c-balance"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Perte prédite vs perte réelle</h3><p class="card__sub" id="balance-cumul-sub">kg depuis le début de la période</p></div></div><div class="chart-legend" id="lg-balance-cumul"></div><div class="chart-box"><canvas id="c-balance-cumul"></canvas></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Dépense : montre vs réalité</h3><p class="card__sub">kcal/jour sur 21 jours glissants · « réalité » = apport saisi − bilan déduit de la pente du poids</p></div></div><div class="chart-legend" id="lg-tdee"></div><div class="chart-box"><canvas id="c-tdee"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Activité ===== -->
+      <section class="section hidden" id="section-activity">
+        <div class="section__head">
+          <h2>Activité</h2>
+          <p>Pas, temps actif et séances enregistrés par le téléphone et la montre.</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card span-2"><div class="card__head"><div><h3>Pas par jour</h3><p class="card__sub">Tous appareils fusionnés</p></div></div><div class="chart-legend" id="lg-steps"></div><div class="chart-box chart-box--tall"><canvas id="c-steps"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Séances par semaine</h3><p class="card__sub">Minutes par type d'activité</p></div></div><div class="chart-legend" id="lg-sessions-week"></div><div class="chart-box"><canvas id="c-sessions-week"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Minutes actives</h3><p class="card__sub">Temps en mouvement par jour</p></div></div><div class="chart-box"><canvas id="c-active-min"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Pas selon le jour de la semaine</h3><p class="card__sub">Moyenne par jour</p></div></div><div class="chart-box"><canvas id="c-steps-weekday"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>VO2max estimée</h3><p class="card__sub">Mesurée pendant les séances (ml/kg/min)</p></div></div><div class="chart-box"><canvas id="c-vo2"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Étages montés</h3><p class="card__sub">Par jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-floors"></canvas></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Dernières séances</h3><p class="card__sub">Les 12 plus récentes de la période</p></div></div><div id="sessions-table"></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Sommeil &amp; récupération ===== -->
+      <section class="section hidden" id="section-sleep">
+        <div class="section__head">
+          <h2>Sommeil &amp; récupération</h2>
+          <p>Nuits enregistrées par la montre (rattachées au jour du réveil).</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card span-2"><div class="card__head"><div><h3>Durée et phases du sommeil</h3><p class="card__sub">Heures par nuit</p></div></div><div class="chart-legend" id="lg-sleep-dur"></div><div class="chart-box chart-box--tall"><canvas id="c-sleep-dur"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Horaires de coucher et de lever</h3><p class="card__sub" id="sleep-times-sub">Une barre par nuit</p></div></div><div class="chart-box chart-box--tall"><canvas id="c-sleep-times"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Hypnogramme</h3><p class="card__sub">Phases des dernières nuits</p></div></div><div class="chart-legend" id="lg-hypnogram"></div><div id="hypnogram"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Score et efficacité</h3><p class="card__sub">Sur 100</p></div></div><div class="chart-legend" id="lg-sleep-score"></div><div class="chart-box"><canvas id="c-sleep-score"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Récupération</h3><p class="card__sub">Mentale et physique, sur 100</p></div></div><div class="chart-legend" id="lg-recovery"></div><div class="chart-box"><canvas id="c-recovery"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Cœur pendant le sommeil</h3><p class="card__sub">Fréquence cardiaque (bpm) et variabilité (ms)</p></div></div><div class="chart-legend" id="lg-sleep-hr"></div><div class="chart-box"><canvas id="c-sleep-hr"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Score de vitalité</h3><p class="card__sub">Synthèse sommeil, activité et cœur (sur 100)</p></div></div><div class="chart-box"><canvas id="c-vitality"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Stress &amp; cœur ===== -->
+      <section class="section hidden" id="section-heart">
+        <div class="section__head">
+          <h2>Stress &amp; cœur</h2>
+          <p>Mesures automatiques de la montre. Le stress est un indice de 0 à 100 calculé à partir du rythme cardiaque.</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card"><div class="card__head"><div><h3>Stress quotidien</h3><p class="card__sub">Moyenne des mesures horaires</p></div></div><div class="chart-legend" id="lg-stress"></div><div class="chart-box"><canvas id="c-stress"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Stress selon l'heure et le jour</h3><p class="card__sub">Moyenne sur la période · plus foncé = plus stressé</p></div></div><div id="stress-grid"></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Fréquence cardiaque</h3><p class="card__sub">bpm · repos estimé = heure la plus basse de la journée</p></div></div><div class="chart-legend" id="lg-hr"></div><div class="chart-box"><canvas id="c-hr"></canvas></div></div>
+        </div>
+        <div class="grid grid--3" style="margin-top: var(--space-4)">
+          <div class="card"><div class="card__head"><div><h3>Oxygène sanguin (SpO2)</h3><p class="card__sub">%</p></div></div><div class="chart-box chart-box--short"><canvas id="c-spo2"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Respiration</h3><p class="card__sub">Pendant le sommeil, par minute</p></div></div><div class="chart-box chart-box--short"><canvas id="c-resp"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Température cutanée</h3><p class="card__sub">Pendant le sommeil, °C</p></div></div><div class="chart-box chart-box--short"><canvas id="c-skin"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Indice AGE</h3><p class="card__sub">Produits de glycation avancée</p></div></div><div class="chart-box chart-box--short"><canvas id="c-age"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Pression artérielle moyenne</h3><p class="card__sub">mmHg</p></div></div><div class="chart-box chart-box--short"><canvas id="c-map"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Mesures ponctuelles</h3><p class="card__sub">Tension, antioxydants, humeur, caféine</p></div></div><div id="vitals-list"></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Corrélations ===== -->
+      <section class="section hidden" id="section-correlations">
+        <div class="section__head">
+          <h2>Corrélations</h2>
+          <p>Ce qui varie ensemble, jour par jour. Un lien n'est pas une cause, et avec peu de jours les coefficients restent fragiles.</p>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><h3>Matrice des liens</h3><p class="card__sub">Coefficient de Pearson (−1 à +1) · bleu = varient en sens inverse, rouge = dans le même sens · dernière colonne : variation de poids du lendemain</p></div></div>
+          <div id="corr-matrix"></div>
+        </div>
+        <div class="grid grid--3" style="margin-top: var(--space-4)">
+          <div class="card"><div class="card__head"><div><h3 id="c-corr-1-title"></h3><p class="card__sub" id="c-corr-1-sub"></p></div></div><div class="chart-box"><canvas id="c-corr-1"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3 id="c-corr-2-title"></h3><p class="card__sub" id="c-corr-2-sub"></p></div></div><div class="chart-box"><canvas id="c-corr-2"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3 id="c-corr-3-title"></h3><p class="card__sub" id="c-corr-3-sub"></p></div></div><div class="chart-box"><canvas id="c-corr-3"></canvas></div></div>
+        </div>
+      </section>
+
+      <!-- ===== Historique long terme ===== -->
+      <section class="section hidden" id="section-history">
+        <div class="section__head">
+          <h2>Historique long terme</h2>
+          <p>Moyennes mensuelles sur tout l'export, quel que soit le filtre de période.</p>
+        </div>
+        <div class="grid grid--3" id="history-grid"></div>
+      </section>
+
       <!-- ===== Données ===== -->
       <section class="section" id="section-data">
         <div class="section__head">
@@ -445,6 +580,7 @@
         <div class="grid">
           <div class="card"><div class="card__head"><h3>Mensurations</h3></div><div id="table-measurements"></div></div>
           <div class="card"><div class="card__head"><h3>Pesées</h3></div><div id="table-composition"></div></div>
+          <div class="card hidden" id="card-lifestyle-table"><div class="card__head"><div><h3>Mode de vie, jour par jour</h3><p class="card__sub">Export santé, du plus récent au plus ancien</p></div></div><div id="table-lifestyle"></div></div>
         </div>
       </section>
     </main>
@@ -464,6 +600,9 @@
   <script src="js/parsers/compositionParser.js"></script>
   <script src="js/parsers/measurementsParser.js"></script>
   <script src="js/parsers/fileDetector.js"></script>
+  <script src="js/parsers/samsung/samsungCsv.js"></script>
+  <script src="js/parsers/samsung/samsungSources.js"></script>
+  <script src="js/parsers/samsung/samsungLoader.js"></script>
   <!-- Analyses -->
   <script src="js/analysis/metrics.js"></script>
   <script src="js/analysis/trends.js"></script>
@@ -471,6 +610,14 @@
   <script src="js/analysis/quality.js"></script>
   <script src="js/analysis/milestones.js"></script>
   <script src="js/analysis/dailyReading.js"></script>
+  <script src="js/analysis/lifestyle/dailyLifestyle.js"></script>
+  <script src="js/analysis/lifestyle/energyBalance.js"></script>
+  <script src="js/analysis/lifestyle/nutritionStats.js"></script>
+  <script src="js/analysis/lifestyle/activityStats.js"></script>
+  <script src="js/analysis/lifestyle/sleepStressStats.js"></script>
+  <script src="js/analysis/lifestyle/correlations.js"></script>
+  <script src="js/analysis/lifestyle/longTerm.js"></script>
+  <script src="js/analysis/lifestyle/lifestyle.js"></script>
   <script src="js/analysis/insights.js"></script>
   <!-- Graphiques -->
   <script src="js/charts/chartTheme.js"></script>
@@ -481,6 +628,14 @@
   <script src="js/charts/dynamicsCharts.js"></script>
   <script src="js/charts/compositionMapCharts.js"></script>
   <script src="js/charts/calendarHeatmap.js"></script>
+  <script src="js/charts/lifestyleKit.js"></script>
+  <script src="js/charts/nutritionCharts.js"></script>
+  <script src="js/charts/energyCharts.js"></script>
+  <script src="js/charts/activityCharts.js"></script>
+  <script src="js/charts/sleepCharts.js"></script>
+  <script src="js/charts/heartCharts.js"></script>
+  <script src="js/charts/correlationCharts.js"></script>
+  <script src="js/charts/longTermCharts.js"></script>
   <!-- Silhouette -->
   <script src="js/silhouette/bodyModel.js"></script>
   <script src="js/silhouette/profileModel.js"></script>
@@ -495,6 +650,7 @@
   <script src="js/ui/tables.js"></script>
   <script src="js/ui/summaryPanels.js"></script>
   <script src="js/ui/dailyReadingCard.js"></script>
+  <script src="js/ui/lifestylePanels.js"></script>
   <script src="js/ui/printReport.js"></script>
   <script src="js/ui/dateFilter.js"></script>
   <!-- Application -->

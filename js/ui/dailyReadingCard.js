@@ -28,7 +28,8 @@
     );
   }
 
-  function render(host, reading) {
+  /** @param {string|null} context  contexte de la veille (export santé), sans relation de cause affirmée */
+  function render(host, reading, context = null) {
     if (!host) return;
     const card = host.closest('.card');
     if (!reading) {
@@ -59,6 +60,7 @@
       <ul class="reading__facts">
         ${prev}
         <li>Demain, une pesée entre <strong>${fmt(r.tomorrow.low, 1)} et ${fmt(r.tomorrow.high, 1)} kg</strong> serait normale.</li>
+        ${context ? `<li>Contexte : ${context}.</li>` : ''}
         <li>Tendance des ${r.windowDays} derniers jours : ${fmtDelta(r.slopePerWeek, 2)} kg/semaine (calculée sans la pesée du jour).</li>
       </ul>`;
   }

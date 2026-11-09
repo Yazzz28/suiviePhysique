@@ -9,7 +9,7 @@
   const { trends, metrics, milestones } = SP.analysis;
   const { ENERGY, RATE_WINDOW_DAYS } = SP.analysis.projection;
 
-  function build({ composition, daily, measurements, settings, projection, records, quality }) {
+  function build({ composition, daily, measurements, settings, projection, records, quality, lifestyle }) {
     const out = [];
     const push = (tone, icon, html) => out.push({ tone, icon, html });
 
@@ -177,8 +177,76 @@
     pushRate(push, daily);
     pushNextMilestone(push, records);
     pushQuality(push, quality, settings);
+    if (lifestyle) pushLifestyle(push, lifestyle);
 
     return out;
+  }
+
+  /**
+   * Analyses croisées avec l'export santé (nutrition, activité, sommeil).
+   * Formulées comme des constats : aucune relation de cause n'est affirmée.
+   */
+  function pushLifestyle(push, ls) {
+    const e = ls.energy;
+    if (isFiniteNumber(e.meanBalance) && isFiniteNumber(e.impliedBalance) && e.counts.complete >= 7) {
+      const gap = e.impliedBalance - e.meanBalance;
+      const coherent = Math.abs(gap) < 250;
+      push(
+        coherent ? 'good' : 'info',
+        '⚖',
+        `Bilan énergétique : <strong>${fmtDelta(e.meanBalance, 0)} kcal/j</strong> d'après tes repas saisis et la montre, ` +
+          `<strong>${fmtDelta(e.impliedBalance, 0)} kcal/j</strong> d'après ta courbe de poids. ` +
+          (coherent
+            ? 'Les deux concordent : ta saisie et l’estimation de la montre sont cohérentes.'
+            : gap > 0
+              ? 'Ta perte réelle est moins rapide que prévu : une partie des repas n’est peut-être pas saisie, ou la montre surestime ta dépense.'
+              : 'Ta perte réelle est plus rapide que prévu : la montre sous-estime peut-être ta dépense, ou une partie de la perte est de l’eau.')
+      );
+    }
+    const n = ls.nutrition;
+    if (n && isFiniteNumber(n.proteinPerKgMean)) {
+      const low = n.proteinPerKgMean < 1.6;
+      push(
+        low ? 'warn' : 'good',
+        '🥩',
+        `Protéines : <strong>${fmt(n.proteinPerKgMean, 2)} g/kg</strong> de poids par jour en moyenne (${fmt(n.macros.protein, 0)} g). ` +
+          (low
+            ? 'En perte de poids, 1,6 à 2,2 g/kg aident à préserver le muscle.'
+            : 'Dans la zone recommandée en perte de poids (1,6 à 2,2 g/kg).')
+      );
+    }
+    const a = ls.activity;
+    if (isFiniteNumber(a.stepsMean) && a.stepDays >= 7) {
+      push(
+        a.stepsMean >= a.stepGoal ? 'good' : 'info',
+        '👟',
+        `<strong>${fmt(a.stepsMean, 0)} pas/jour</strong> en moyenne, objectif de ${fmt(a.stepGoal, 0)} atteint ${a.goalDays} jours sur ${a.stepDays}` +
+          (a.sessionsCount ? ` · ${a.sessionsCount} séances (${fmt(a.sessionsMinutes / 60, 1)} h).` : '.')
+      );
+    }
+    const sl = ls.sleep;
+    if (sl && sl.nights >= 5) {
+      const h = Math.floor(sl.durationMean / 60);
+      const m = Math.round(sl.durationMean - h * 60);
+      push(
+        sl.durationMean >= 420 ? 'good' : 'warn',
+        '☾',
+        `Sommeil : <strong>${h} h ${String(m).padStart(2, '0')}</strong> par nuit en moyenne sur ${sl.nights} nuits, ` +
+          `${sl.shortNights} sous 7 h` +
+          (isFiniteNumber(sl.bedtimeSd) ? `, heure de coucher variable de ± ${fmt(sl.bedtimeSd * 60, 0)} min.` : '.')
+      );
+    }
+    const c = ls.correlations;
+    const top = c && c.withWeight.find((w) => Math.abs(w.r) >= 0.3);
+    if (top) {
+      push(
+        'info',
+        '↔',
+        `Lien le plus marqué avec la variation de poids du lendemain : <strong>${top.variable.label.toLowerCase()}</strong> ` +
+          `(r = ${fmtDelta(top.r, 2)} sur ${top.n} jours) : ${top.r > 0 ? 'quand il augmente, le poids du lendemain a tendance à monter' : 'quand il augmente, le poids du lendemain a tendance à baisser'}. ` +
+          `Effet le plus souvent lié à l'eau et au contenu digestif, pas à la graisse.`
+      );
+    }
   }
 
   /** Part de masse maigre dans la perte récente : alerte perte musculaire. */

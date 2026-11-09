@@ -1,13 +1,22 @@
 # Suivi Physique
 
-Application web (HTML / CSS / JS, sans serveur) pour analyser l'évolution de ton corps à partir de deux fichiers CSV : tes **pesées** (poids et composition corporelle) et tes **mensurations** (tours en cm).
+Application web (HTML / CSS / JS, sans serveur) pour analyser l'évolution de ton corps à partir de tes **pesées** (poids et composition corporelle), de tes **mensurations** (tours en cm) et, en option, de ton **export Samsung Health** (repas, activité, sommeil, stress, cœur).
 
 **Tes données ne sont jamais stockées** : pas de localStorage, pas de base locale, aucun envoi réseau. Elles sont traitées en mémoire dans ton navigateur ; recharger la page efface tout. Seul le **code** de l'app est mis en cache, pour qu'elle fonctionne hors connexion.
 
 ## Utilisation
 
 1. Ouvre `index.html` dans ton navigateur (double-clic suffit). Aucune connexion internet n'est nécessaire en local : toutes les librairies sont incluses dans le projet.
-2. Dépose tes fichiers CSV (un seul ou les deux). Le type de chaque fichier est détecté automatiquement.
+2. Dépose tes fichiers dans la zone d'import : pesées, mensurations et/ou le dossier d'export Samsung Health, séparément ou **tout d'un coup** (glisser-déposer de fichiers ou d'un dossier, ou bouton « Choisir un dossier »). Le type de chaque fichier est reconnu par son contenu.
+
+### Export Samsung Health
+
+Dans l'app Samsung Health : *Paramètres › Télécharger les données personnelles*, puis décompresse l'archive et dépose le dossier.
+
+- **Liste blanche** : seuls ≈ 25 tableaux utiles sont lus (`js/parsers/samsung/samsungSources.js`). Les autres fichiers (contacts du classement social, badges, préférences…) ne sont **jamais ouverts**, et les sous-dossiers `jsons/` et `files/` (détails binaires) sont ignorés.
+- Les horaires de l'export sont en UTC : ils sont convertis à l'heure locale de la mesure (colonne `time_offset`).
+- Le dernier jour de l'export (en cours au moment de l'export) est exclu des moyennes journalières.
+- Sans fichier de pesées, les pesées présentes dans l'export (balance connectée, montre) sont utilisées, à partir de la reprise du suivi actuel (après la dernière pause de plus de 45 jours).
 
 ### Installer sur mobile
 
@@ -40,7 +49,14 @@ Formats acceptés : séparateur `;` ou `,`, décimales `89,9` ou `89.9`, dates `
 - **Composition** : origine de la variation de poids (graisse / muscle / eau), répartition, trajectoire gras / maigre, carte FMI × FFMI (Kelly 2009), part de gras dans la perte, masse grasse, muscle, masse maigre, FFMI, graisse viscérale, eau, protéines, os, métabolisme.
 - **Mensurations** : détection des mesures douteuses (tendance robuste de Theil-Sen, valeurs exclues des graphiques au choix), évolution de chaque zone, matrice des variations zones × dates, profil radar, variations, cm perdus par kg perdu, asymétries gauche/droite, ratios (taille/hauteur, taille/hanches, forme en V), BRI et ABSI, estimation US Navy du % de graisse.
 - **Silhouette** : reconstruction de face et de profil (courbes du dos, fessiers, bras) à partir des tours (squelette commun à toutes les dates : seule l'épaisseur des tissus varie), superposition de toutes les dates, comparaison annotée, avant / après à curseur, carte de chaleur des variations, animation dans le temps et export PNG.
-- **Données** : tableaux bruts.
+- **Nutrition** *(export santé)* : apport par jour (jours de saisie probablement incomplète repérés), macronutriments et part de l'énergie vs plages de référence, protéines en g/kg (repère 1,6-2,2 g/kg en perte de poids), calories par repas et par jour de semaine, fibres, sucres, sodium, aliments les plus caloriques.
+- **Bilan énergétique** : apport vs dépense estimée par la montre (repos, activité, digestion), bilan du jour, perte prédite par la saisie vs perte réelle, dépense « réelle » déduite de la pente du poids vs dépense de la montre. Calculé sur la période de saisie régulière en cours.
+- **Activité** : pas (objectif 10 000), minutes actives, séances par semaine et par type, VO2max, étages, pas par jour de semaine, dernières séances.
+- **Sommeil & récupération** : durée et phases par nuit, horaires de coucher / lever et régularité, hypnogramme des 7 dernières nuits, score, efficacité, récupération, FC et VFC pendant le sommeil, score de vitalité.
+- **Stress & cœur** : stress quotidien, carte heure × jour de semaine, FC de repos estimée, SpO2, respiration, température cutanée, indice AGE, pression artérielle moyenne, mesures ponctuelles.
+- **Corrélations** : matrice de Pearson entre métriques du jour et variation de poids du lendemain (au moins 10 jours en commun), nuages de points des liens les plus marqués.
+- **Historique long terme** : moyennes mensuelles sur tout l'export (poids, pas, FC de repos, stress, sommeil, apport).
+- **Données** : tableaux bruts, dont un tableau « mode de vie » jour par jour.
 
 **Rapport imprimable / PDF** : bouton « Rapport PDF » (ou Ctrl+P), puis « Enregistrer en PDF ». Le rapport est le tableau de bord lui-même mis en page pour l'A4 (page de garde, sommaire, thème clair, graphiques redessinés en haute résolution) : toute nouvelle section y figure automatiquement. Pour masquer un contrôle à l'impression, lui ajouter la classe `no-print` (voir `css/print.css`).
 
@@ -54,7 +70,9 @@ css/   variables (tokens, thèmes) · base · layout · components · charts
 js/
   core/        namespace + bus d'événements, utilitaires, état en mémoire
   parsers/     lecture CSV, détection du type de fichier
+    samsung/   export Samsung Health : lecture générique, liste blanche des tables, chargement
   analysis/    métriques dérivées, tendances, analyse rédigée
+    lifestyle/ table journalière, bilan énergétique, nutrition, activité, sommeil, corrélations, historique
   charts/      graphiques Chart.js par section, calendrier
   silhouette/  modèle anatomique, rendu SVG, vue interactive
   ui/          dépôt de fichiers, modèles CSV, KPI, tableaux, filtres, info-bulles
