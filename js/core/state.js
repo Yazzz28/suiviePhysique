@@ -28,6 +28,7 @@
       targetWeight: null,
       sex: 'male',
       excludeOutliers: true, // exclure les mensurations douteuses des graphiques
+      includeIncompleteMeals: true, // intégrer les jours de saisie de repas probablement incomplète
     },
   });
 

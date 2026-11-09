@@ -41,6 +41,7 @@
       `Objectif : ${s.targetWeight ? fmt(s.targetWeight, 1) + ' kg' : 'non défini'}`,
       `Formules : ${s.sex === 'female' ? 'femme' : 'homme'}`,
       `Mensurations douteuses : ${s.excludeOutliers ? 'exclues' : 'incluses'}`,
+      ...(st.lifestyle ? [`Repas probablement incomplets : ${s.includeIncompleteMeals ? 'intégrés' : 'exclus'}`] : []),
     ];
 
     cover.innerHTML = `

@@ -89,6 +89,7 @@
           range: v.lifestyleRange,
           allDaily,
           rho: projection ? projection.rho : null,
+          includeIncomplete: v.settings.includeIncompleteMeals,
         });
       } catch (err) {
         console.error('[SuiviPhysique] Analyse de l\'export santé impossible', err);
@@ -248,6 +249,9 @@
     $('input-target').value = isFiniteNumber(s.targetWeight) ? s.targetWeight : '';
     $('input-sex').value = s.sex;
     $('input-exclude-outliers').checked = s.excludeOutliers;
+    document.querySelectorAll('[data-setting="includeIncompleteMeals"]').forEach((el) => {
+      el.checked = s.includeIncompleteMeals;
+    });
   }
 
   function bindSettings() {
@@ -263,6 +267,13 @@
     $('input-target').addEventListener('change', (e) => state.setSetting('targetWeight', num(e.target)));
     $('input-sex').addEventListener('change', (e) => state.setSetting('sex', e.target.value));
     $('input-exclude-outliers').addEventListener('change', (e) => state.setSetting('excludeOutliers', e.target.checked));
+    // Même réglage affiché en Nutrition et en Bilan énergétique : les interrupteurs restent synchronisés
+    document.querySelectorAll('[data-setting="includeIncompleteMeals"]').forEach((el) =>
+      el.addEventListener('change', (e) => {
+        state.setSetting('includeIncompleteMeals', e.target.checked);
+        syncSettingsInputs();
+      })
+    );
   }
 
   /* ---------------- Thème clair / sombre (non persisté) ---------------- */

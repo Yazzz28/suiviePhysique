@@ -22,7 +22,8 @@
     const c = e.counts;
     const html = [];
     const since = e.window && !e.window.whole ? ` depuis le ${fmtDate(e.window.from)}` : '';
-    if (isFiniteNumber(e.meanIntake)) html.push(kpi('Apport moyen saisi', fmt(e.meanIntake, 0), 'kcal/j', `${c.complete} jours de saisie complète sur ${c.days}${since}`));
+    if (isFiniteNumber(e.meanIntake))
+      html.push(kpi('Apport moyen saisi', fmt(e.meanIntake, 0), 'kcal/j', `${c.complete} jours pris en compte sur ${c.days}${since}`));
     if (isFiniteNumber(e.meanTdee)) html.push(kpi('Dépense moyenne (montre)', fmt(e.meanTdee, 0), 'kcal/j', 'Repos + activité + digestion'));
     if (isFiniteNumber(e.meanBalance))
       html.push(kpi('Bilan saisi', fmtDelta(e.meanBalance, 0), 'kcal/j', e.meanBalance < 0 ? 'Déficit d’après la saisie et la montre' : 'Surplus d’après la saisie et la montre'));
@@ -37,7 +38,15 @@
           isFiniteNumber(e.meanTdee) ? `${fmtDelta(e.adaptiveTdee - e.meanTdee, 0)} kcal vs la montre` : 'Apport saisi − bilan déduit du poids'
         )
       );
-    if (c.days) html.push(kpi('Régularité de saisie', fmt((c.complete / c.days) * 100, 0), '%', `${c.incomplete} jour(s) probablement incomplet(s) (< ${fmt(e.threshold, 0)} kcal)${since}`));
+    if (c.days)
+      html.push(
+        kpi(
+          'Régularité de saisie',
+          fmt((c.reliable / c.days) * 100, 0),
+          '%',
+          `${c.incomplete} jour(s) probablement incomplet(s) (< ${fmt(e.threshold, 0)} kcal), ${e.includeIncomplete ? 'intégrés' : 'exclus'}${since}`
+        )
+      );
     const note = document.getElementById('energy-window');
     if (note) {
       note.textContent = since

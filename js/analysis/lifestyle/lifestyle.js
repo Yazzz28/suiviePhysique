@@ -85,15 +85,16 @@
    * @param {{from: Date, to: Date}} p.range  période affichée
    * @param {object[]} p.allDaily  pesées journalières (toutes)
    * @param {number|null} p.rho    énergie par kg (modèle de projection)
+   * @param {boolean} p.includeIncomplete  intégrer les jours de saisie probablement incomplète
    */
-  function build({ data, range, allDaily, rho }) {
+  function build({ data, range, allDaily, rho, includeIncomplete = true }) {
     const latest = latestDate(data);
     const partialKey = latest ? dayKey(latest) : null;
     const to = latest && latest < range.to ? latest : range.to;
     const weightByDay = new Map((allDaily || []).filter((d) => isFiniteNumber(d.weight)).map((d) => [dayKey(d.date), d.weight]));
 
     const days = L.daily.build(data, { from: range.from, to, partialKey }, weightByDay);
-    const energy = L.energy.analyze(days, { rho });
+    const energy = L.energy.analyze(days, { rho, includeIncomplete });
     const lastWeight = [...(allDaily || [])].reverse().find((d) => isFiniteNumber(d.weight));
     const foods = inRange(data.foods, range.from, to);
     const sessions = inRange(data.sessions, range.from, to);
@@ -104,7 +105,7 @@
     let history = null;
     if (first && latest) {
       const allDays = L.daily.build(data, { from: first, to: latest, partialKey }, weightByDay);
-      L.energy.analyze(allDays, { rho }); // classe les jours de saisie complète
+      L.energy.analyze(allDays, { rho, includeIncomplete }); // classe les jours de saisie
       history = L.longTerm.monthly(allDays, data.weights);
     }
 

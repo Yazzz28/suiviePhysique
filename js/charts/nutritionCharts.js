@@ -27,11 +27,15 @@
       label: 'Apport saisi',
       unit: 'kcal',
       color: t.series[1],
-      barColor: (d) => (d.logStatus === 'complete' ? withAlpha(t.series[1], 0.55) : withAlpha(t.axis, 0.6)),
+      barColor: (d) => (d.lowLog ? withAlpha(t.axis, 0.6) : withAlpha(t.series[1], 0.55)),
       legendId: 'lg-kcal-in',
       legendExtra: [
         { label: 'Apport saisi', color: withAlpha(t.series[1], 0.55), box: true },
-        { label: 'Saisie probablement incomplète', color: withAlpha(t.axis, 0.6), box: true },
+        {
+          label: `Saisie probablement incomplète (${energy.includeIncomplete ? 'intégrée' : 'exclue'})`,
+          color: withAlpha(t.axis, 0.6),
+          box: true,
+        },
       ],
       refs: isFiniteNumber(energy.meanTdee) ? [{ label: `Dépense moyenne (montre) ${fmt(energy.meanTdee, 0)} kcal`, value: energy.meanTdee, color: t.series[0] }] : [],
     });

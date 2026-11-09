@@ -45,9 +45,9 @@
     const yesterday = byKey.get(dayKey(new Date(readingDate.getTime() - DAY_MS / 2)));
     const items = [];
     if (yesterday) {
-      if (yesterday.logStatus === 'complete') items.push(`Hier : ${fmt(yesterday.kcalIn, 0)} kcal saisies`);
+      if (isFiniteNumber(yesterday.kcalIn) && !yesterday.lowLog) items.push(`Hier : ${fmt(yesterday.kcalIn, 0)} kcal saisies`);
       else if (isFiniteNumber(yesterday.kcalIn)) items.push(`Hier : saisie probablement incomplète (${fmt(yesterday.kcalIn, 0)} kcal)`);
-      if (isFiniteNumber(yesterday.carbs) && yesterday.logStatus === 'complete') items.push(`${fmt(yesterday.carbs, 0)} g de glucides`);
+      if (isFiniteNumber(yesterday.carbs) && !yesterday.lowLog) items.push(`${fmt(yesterday.carbs, 0)} g de glucides`);
       if (isFiniteNumber(yesterday.steps)) items.push(`${fmt(yesterday.steps, 0)} pas`);
       if (isFiniteNumber(yesterday.sessionsMin) && yesterday.sessionsMin > 0) items.push(`${fmt(yesterday.sessionsMin, 0)} min de séance`);
     }
@@ -66,7 +66,7 @@
     }
     if (card) card.classList.remove('hidden');
     const cols = [
-      ['Apport', (d) => (isFiniteNumber(d.kcalIn) ? fmt(d.kcalIn, 0) + (d.logStatus === 'partial' ? ' *' : '') : '—')],
+      ['Apport', (d) => (isFiniteNumber(d.kcalIn) ? fmt(d.kcalIn, 0) + (d.lowLog ? ' *' : '') : '—')],
       ['Prot. g', (d) => fmt(d.protein, 0)],
       ['Gluc. g', (d) => fmt(d.carbs, 0)],
       ['Lip. g', (d) => fmt(d.fat, 0)],
@@ -87,7 +87,9 @@
       .join('');
     host.innerHTML = `<div class="table-wrap table-scroll"><table class="data-table">
       <thead><tr><th>Date</th>${cols.map(([h]) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
-      <p class="muted rank-list__note">* saisie probablement incomplète (moins de ${fmt(lifestyle.energy.threshold, 0)} kcal) : exclue des moyennes.</p>`;
+      <p class="muted rank-list__note">* saisie probablement incomplète (moins de ${fmt(lifestyle.energy.threshold, 0)} kcal) : ${
+        lifestyle.energy.includeIncomplete ? 'intégrée aux moyennes' : 'exclue des moyennes'
+      } (interrupteur en Nutrition et Bilan énergétique).</p>`;
   }
 
   SP.ui.lifestylePanels = { renderKpis, renderTable, readingContext };

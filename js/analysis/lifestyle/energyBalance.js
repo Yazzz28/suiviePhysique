@@ -61,14 +61,18 @@
 
   /**
    * @param {object[]} days  table journalière (dailyLifestyle.build)
-   * @param {{rho?: number}} opts  énergie par kg (modèle de projection si disponible)
+   * @param {{rho?: number, includeIncomplete?: boolean}} opts
+   *   rho : énergie par kg (modèle de projection si disponible)
+   *   includeIncomplete : intégrer les jours de saisie probablement incomplète (choix de l'utilisateur)
    */
-  function analyze(days, { rho } = {}) {
+  function analyze(days, { rho, includeIncomplete = true } = {}) {
     const energyPerKg = isFiniteNumber(rho) ? rho : DEFAULT_RHO;
     const full = days.filter((d) => !d.partial);
     const threshold = completeThreshold(days);
     full.forEach((d) => {
-      d.logStatus = !isFiniteNumber(d.kcalIn) ? 'none' : d.kcalIn >= threshold ? 'complete' : 'partial';
+      // lowLog : apport sous le seuil (saisie probablement incomplète) ; exclu des calculs seulement si demandé
+      d.lowLog = isFiniteNumber(d.kcalIn) && d.kcalIn < threshold;
+      d.logStatus = !isFiniteNumber(d.kcalIn) ? 'none' : d.lowLog && !includeIncomplete ? 'partial' : 'complete';
       d.balance = d.logStatus === 'complete' && isFiniteNumber(d.tdee) ? d.kcalIn - d.tdee : null;
     });
     // Synthèse calculée sur la période de saisie régulière (sinon : toute la période)
@@ -88,13 +92,15 @@
     return {
       rho: energyPerKg,
       threshold,
+      includeIncomplete,
       days: full,
       window: window.length ? { from: window[0].date, to: window[window.length - 1].date, whole: window === full } : null,
       counts: {
         days: window.length,
         logged: window.filter((d) => d.logStatus !== 'none').length,
         complete: complete.length,
-        incomplete: window.filter((d) => d.logStatus === 'partial').length,
+        incomplete: window.filter((d) => d.lowLog).length,
+        reliable: window.filter((d) => d.logStatus !== 'none' && !d.lowLog).length,
       },
       meanIntake,
       meanTdee,

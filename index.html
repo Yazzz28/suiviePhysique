@@ -314,7 +314,7 @@
         <div class="card" style="margin-bottom: var(--space-4)">
           <div class="card__head">
             <div><h3>Qualité des mesures</h3><p class="card__sub">Valeurs qui s'écartent de la tendance plus qu'une erreur normale de mètre ruban</p></div>
-            <label class="field"><input type="checkbox" id="input-exclude-outliers" checked> Exclure des graphiques</label>
+            <label class="switch no-print"><input type="checkbox" role="switch" id="input-exclude-outliers" checked><span class="switch__track" aria-hidden="true"></span>Exclure des graphiques</label>
           </div>
           <div id="quality"></div>
         </div>
@@ -459,7 +459,7 @@
           <p>Repas saisis dans Samsung Health. Les moyennes ne prennent que les jours de saisie complète.</p>
         </div>
         <div class="grid grid--2">
-          <div class="card span-2"><div class="card__head"><div><h3>Apport calorique par jour</h3><p class="card__sub">kcal saisies · gris = jour probablement incomplet</p></div></div><div class="chart-legend" id="lg-kcal-in"></div><div class="chart-box chart-box--tall"><canvas id="c-kcal-in"></canvas></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Apport calorique par jour</h3><p class="card__sub">kcal saisies · gris = jour probablement incomplet</p></div><label class="switch no-print"><input type="checkbox" role="switch" data-setting="includeIncompleteMeals" checked id="input-include-incomplete"><span class="switch__track" aria-hidden="true"></span>Intégrer les jours incomplets</label></div><div class="chart-legend" id="lg-kcal-in"></div><div class="chart-box chart-box--tall"><canvas id="c-kcal-in"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Macronutriments</h3><p class="card__sub">kcal apportées par les protéines, glucides et lipides (jours complets)</p></div></div><div class="chart-legend" id="lg-macros"></div><div class="chart-box"><canvas id="c-macros"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Répartition de l'énergie</h3><p class="card__sub">Part moyenne de chaque macronutriment vs plage de référence</p></div></div><div class="chart-legend" id="lg-macro-share"></div><div class="chart-box"><canvas id="c-macro-share"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Protéines par kg de poids</h3><p class="card__sub">g de protéines / kg de poids du jour</p></div></div><div class="chart-box"><canvas id="c-protein-kg"></canvas></div></div>
@@ -480,6 +480,7 @@
           <h2>Bilan énergétique</h2>
           <p>Ce que tu manges vs ce que tu dépenses, et ce que ta courbe de poids en dit. La dépense de la montre est une estimation.</p>
         </div>
+        <div class="section__tools"><label class="switch no-print"><input type="checkbox" role="switch" data-setting="includeIncompleteMeals" checked><span class="switch__track" aria-hidden="true"></span>Intégrer les jours incomplets</label></div>
         <div class="grid grid--kpi" id="energy-kpis"></div>
         <p class="chart-hint" id="energy-window"></p>
         <div class="grid grid--2" style="margin-top: var(--space-4)">
