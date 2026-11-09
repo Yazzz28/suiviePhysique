@@ -86,8 +86,11 @@
    * @param {object[]} p.allDaily  pesées journalières (toutes)
    * @param {number|null} p.rho    énergie par kg (modèle de projection)
    * @param {boolean} p.includeIncomplete  intégrer les jours de saisie probablement incomplète
+   * @param {object} p.settings     réglages (objectif, date cible)
+   * @param {number|null} p.weightNow  poids lissé actuel (tendance)
+   * @param {object[]} p.daily      pesées journalières de la période
    */
-  function build({ data, range, allDaily, rho, includeIncomplete = true }) {
+  function build({ data, range, allDaily, rho, includeIncomplete = true, settings = {}, weightNow = null, daily = [] }) {
     const latest = latestDate(data);
     const partialKey = latest ? dayKey(latest) : null;
     const to = latest && latest < range.to ? latest : range.to;
@@ -103,11 +106,19 @@
     // Historique complet (indépendant de la période)
     const first = earliestDate(data);
     let history = null;
+    let allDays = [];
     if (first && latest) {
-      const allDays = L.daily.build(data, { from: first, to: latest, partialKey }, weightByDay);
+      allDays = L.daily.build(data, { from: first, to: latest, partialKey }, weightByDay);
       L.energy.analyze(allDays, { rho, includeIncomplete }); // classe les jours de saisie
       history = L.longTerm.monthly(allDays, data.weights);
     }
+
+    // Toutes les pesées connues (export + fichier de pesées) pour les cycles et les records
+    const allWeights = [...(data.weights || []), ...(allDaily || []).filter((d) => isFiniteNumber(d.weight)).map((d) => ({ date: d.date, weight: d.weight }))].sort(
+      (a, b) => a.date - b.date
+    );
+    const tdee = isFiniteNumber(energy.adaptiveTdee) ? energy.adaptiveTdee : energy.meanTdee;
+    const sessionsAll = data.sessions || [];
 
     return {
       range: { from: range.from, to },
@@ -115,7 +126,28 @@
       days,
       energy,
       nutrition: L.nutrition.analyze(days, foods, lastWeight ? lastWeight.weight : null),
+      protein: L.nutrition.proteinQuality(inRange(data.meals, range.from, to), foods, data.foodInfo),
       activity: L.activity.analyze(days, sessions),
+      spontaneous: L.activity.spontaneous(days, sessions),
+      weekPattern: L.weekPattern.analyze(energy.days, daily),
+      fluctuation: allDays.length ? L.fluctuation.analyze(allDays) : null,
+      adaptation: L.budget.adaptation(energy.rolling, days),
+      budget: L.budget.budget({
+        weightNow: isFiniteNumber(weightNow) ? weightNow : lastWeight ? lastWeight.weight : null,
+        target: settings.targetWeight,
+        targetDate: settings.targetDate,
+        tdee,
+        rho: energy.rho,
+        sex: settings.sex,
+        today: to,
+      }),
+      tdeeSource: isFiniteNumber(energy.adaptiveTdee) ? 'adaptive' : 'watch',
+      rhythms: L.rhythms.analyze(days, inRange(data.meals, range.from, to)),
+      recovery: allDays.length
+        ? L.recovery.analyze(allDays, { sessions: sessionsAll, vitals: { skinTemp: data.skinTemp, respiration: data.respiration }, range: { from: range.from, to } })
+        : null,
+      phases: L.weightPhases.analyze(allWeights, allDays),
+      records: allDays.length ? L.records.analyze(allDays, allWeights, history) : null,
       sleep: L.sleepStress.sleep(days),
       stressHeart: L.sleepStress.stressAndHeart(days, stress),
       correlations: L.correlations.analyze(days),

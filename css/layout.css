@@ -153,3 +153,4 @@
 }
 .view-more .muted { margin-bottom: var(--space-3); font-size: 0.85rem; }
 .view-essential .view-more { display: block; }
+.view-essential .insight:not([data-essential]) { display: none; }

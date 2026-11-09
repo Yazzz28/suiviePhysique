@@ -138,6 +138,7 @@
           <a class="app-nav__link hidden" href="#section-sleep">Sommeil</a>
           <a class="app-nav__link hidden" href="#section-heart">Cœur</a>
           <a class="app-nav__link hidden" href="#section-correlations">Corrélations</a>
+          <a class="app-nav__link hidden" href="#section-rhythms">Rythmes</a>
           <a class="app-nav__link hidden" href="#section-history">Historique</a>
           <a class="app-nav__link" href="#section-data">Données</a>
         </div>
@@ -221,6 +222,7 @@
           </div>
         </div>
         <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div class="card span-2"><div class="card__head"><div><h3>D'où vient ta variation d'aujourd'hui</h3><p class="card__sub">Ce qui s'est passé hier (repas, pas, sommeil) et son effet habituel sur ton poids du lendemain</p></div></div><div id="fluctuation"></div></div>
           <div class="card">
             <div class="card__head"><div><h3>Variation cumulée</h3><p class="card__sub">kg depuis la première pesée de la période</p></div></div>
             <div class="chart-box"><canvas id="c-weight-cumul"></canvas></div>
@@ -480,6 +482,9 @@
           <div class="card"><div class="card__head"><div><h3>Macronutriments</h3><p class="card__sub">kcal apportées par les protéines, glucides et lipides (jours complets)</p></div></div><div class="chart-legend" id="lg-macros"></div><div class="chart-box"><canvas id="c-macros"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Répartition de l'énergie</h3><p class="card__sub">Part moyenne de chaque macronutriment vs plage de référence</p></div></div><div class="chart-legend" id="lg-macro-share"></div><div class="chart-box"><canvas id="c-macro-share"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Protéines par kg de poids</h3><p class="card__sub">g de protéines / kg de poids du jour</p></div></div><div class="chart-box"><canvas id="c-protein-kg"></canvas></div></div>
+          <div data-essential class="card"><div class="card__head"><div><h3>Protéines par repas</h3><p class="card__sub" id="protein-meals-sub">g par repas de plus de 150 kcal, repère 25 g</p></div></div><div class="chart-box "><canvas id="c-protein-meals"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Tes meilleurs choix et tes pièges</h3><p class="card__sub">g de protéines pour 100 kcal (indépendant de la portion), aliments consommés sur la période</p></div></div><div id="protein-foods"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Tes repas les plus protéinés</h3><p class="card__sub">Au moins 25 g de protéines, classés par protéines pour leurs calories</p></div></div><div id="best-meals"></div></div>
           <div class="card"><div class="card__head"><div><h3>Calories par repas</h3><p class="card__sub">Moyenne par jour de saisie complète</p></div></div><div class="chart-box"><canvas id="c-meals"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Apport selon le jour de la semaine</h3><p class="card__sub">Moyenne des jours complets</p></div></div><div class="chart-box"><canvas id="c-nutri-weekday"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Aliments les plus caloriques</h3><p class="card__sub">kcal cumulées sur la période</p></div></div><div id="top-foods"></div></div>
@@ -501,10 +506,13 @@
         <div class="grid grid--kpi" id="energy-kpis"></div>
         <p class="chart-hint" id="energy-window"></p>
         <div class="grid grid--2" style="margin-top: var(--space-4)">
+          <div data-essential class="card span-2"><div class="card__head"><div><h3>Budget calorique</h3><p class="card__sub">Combien manger par jour pour atteindre ton objectif, d'après ta dépense réelle</p></div></div><div id="budget"></div></div>
           <div class="card span-2"><div class="card__head"><div><h3>Apport vs dépense</h3><p class="card__sub">kcal par jour : dépense estimée par la montre (barres) et apport saisi (courbe)</p></div></div><div class="chart-legend" id="lg-energy"></div><div class="chart-box chart-box--tall"><canvas id="c-energy"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Bilan du jour</h3><p class="card__sub">Apport − dépense, jours de saisie complète</p></div></div><div class="chart-legend" id="lg-balance"></div><div class="chart-box"><canvas id="c-balance"></canvas></div></div>
           <div data-essential class="card"><div class="card__head"><div><h3>Perte prédite vs perte réelle</h3><p class="card__sub" id="balance-cumul-sub">kg depuis le début de la période</p></div></div><div class="chart-legend" id="lg-balance-cumul"></div><div class="chart-box"><canvas id="c-balance-cumul"></canvas></div></div>
           <div class="card span-2"><div class="card__head"><div><h3>Dépense : montre vs réalité</h3><p class="card__sub">kcal/jour sur 21 jours glissants · « réalité » = apport saisi − bilan déduit de la pente du poids</p></div></div><div class="chart-legend" id="lg-tdee"></div><div class="chart-box"><canvas id="c-tdee"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Adaptation métabolique</h3><p class="card__sub" id="adaptation-sub">kcal/j · dépense réelle estimée vs baisse attendue avec le poids perdu (22 kcal/j par kg)</p></div></div><div class="chart-legend" id="lg-adaptation"></div><div class="chart-box "><canvas id="c-adaptation"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Semaine type</h3><p class="card__sub" id="week-balance-sub">Bilan moyen par jour de la semaine (jours de saisie complète)</p></div></div><div class="chart-box "><canvas id="c-week-balance"></canvas></div></div>
         </div>
       </section>
 
@@ -519,6 +527,7 @@
           <div class="card"><div class="card__head"><div><h3>Séances par semaine</h3><p class="card__sub">Minutes par type d'activité</p></div></div><div class="chart-legend" id="lg-sessions-week"></div><div class="chart-box"><canvas id="c-sessions-week"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Minutes actives</h3><p class="card__sub">Temps en mouvement par jour</p></div></div><div class="chart-box"><canvas id="c-active-min"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Pas selon le jour de la semaine</h3><p class="card__sub">Moyenne par jour</p></div></div><div class="chart-box"><canvas id="c-steps-weekday"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Mouvement spontané</h3><p class="card__sub" id="spontaneous-sub">Pas hors séances par semaine et apport moyen de la semaine</p></div></div><div class="chart-legend" id="lg-spontaneous"></div><div class="chart-box "><canvas id="c-spontaneous"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>VO2max estimée</h3><p class="card__sub">Mesurée pendant les séances (ml/kg/min)</p></div></div><div class="chart-box"><canvas id="c-vo2"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Étages montés</h3><p class="card__sub">Par jour</p></div></div><div class="chart-box chart-box--short"><canvas id="c-floors"></canvas></div></div>
           <div class="card span-2"><div class="card__head"><div><h3>Dernières séances</h3><p class="card__sub">Les 12 plus récentes de la période</p></div></div><div id="sessions-table"></div></div>
@@ -552,6 +561,9 @@
           <div class="card"><div class="card__head"><div><h3>Stress quotidien</h3><p class="card__sub">Moyenne des mesures horaires</p></div></div><div class="chart-legend" id="lg-stress"></div><div class="chart-box"><canvas id="c-stress"></canvas></div></div>
           <div class="card"><div class="card__head"><div><h3>Stress selon l'heure et le jour</h3><p class="card__sub">Moyenne sur la période · plus foncé = plus stressé</p></div></div><div id="stress-grid"></div></div>
           <div class="card span-2"><div class="card__head"><div><h3>Fréquence cardiaque</h3><p class="card__sub">bpm · repos estimé = heure la plus basse de la journée</p></div></div><div class="chart-legend" id="lg-hr"></div><div class="chart-box"><canvas id="c-hr"></canvas></div></div>
+          <div data-essential class="card"><div class="card__head"><div><h3>Score de récupération</h3><p class="card__sub" id="recovery-sub">0-100 · VFC, FC de repos et sommeil comparés à ta normale des 30 jours précédents</p></div></div><div class="chart-box "><canvas id="c-recovery-score"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Efficacité cardio à la marche</h3><p class="card__sub" id="cardio-eff-sub">km/h pour 10 bpm au-dessus de ta FC de repos : plus haut = cœur moins sollicité à vitesse égale</p></div></div><div class="chart-box "><canvas id="c-cardio-eff"></canvas></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Nuits atypiques</h3><p class="card__sub">FC de repos nettement au-dessus de ta normale, avec température cutanée ou respiration en hausse</p></div></div><div id="atypical-nights"></div></div>
         </div>
         <div class="grid grid--3" style="margin-top: var(--space-4)">
           <div class="card"><div class="card__head"><div><h3>Oxygène sanguin (SpO2)</h3><p class="card__sub">%</p></div></div><div class="chart-box chart-box--short"><canvas id="c-spo2"></canvas></div></div>
@@ -580,11 +592,33 @@
         </div>
       </section>
 
+      <!-- ===== Rythmes de vie ===== -->
+      <section class="section hidden" id="section-rhythms">
+        <div class="section__head">
+          <h2>Rythmes de vie</h2>
+          <p>Horaires des repas, sommeil et stress : ce qui va ensemble, avec le nombre de jours de chaque comparaison. Un lien n'est pas une cause.</p>
+        </div>
+        <div class="grid grid--2">
+          <div class="card span-2"><div class="card__head"><div><h3>Fenêtre alimentaire</h3><p class="card__sub" id="eating-window-sub">Du premier au dernier repas de chaque jour</p></div></div><div class="chart-box chart-box--tall"><canvas id="c-eating-window"></canvas></div></div>
+          <div class="card"><div class="card__head"><div><h3>Repas tardif → sommeil</h3><p class="card__sub">Score et durée de la nuit qui suit</p></div></div><div id="rh-late"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Nuit courte → journée</h3><p class="card__sub">Apport, pas et stress du jour après la nuit</p></div></div><div id="rh-nights"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Stress → alimentation</h3><p class="card__sub">Jours les moins stressés vs les plus stressés</p></div></div><div id="rh-stress"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Décalage du week-end</h3><p class="card__sub">Milieu de ta nuit en semaine vs le week-end</p></div></div><div id="rh-jetlag"></div></div>
+        </div>
+      </section>
+
       <!-- ===== Historique long terme ===== -->
       <section class="section hidden" id="section-history">
         <div class="section__head">
           <h2>Historique long terme</h2>
           <p>Moyennes mensuelles sur tout l'export, quel que soit le filtre de période.</p>
+        </div>
+        <div class="grid grid--2" style="margin-bottom: var(--space-4)">
+          <div data-essential class="card span-2"><div class="card__head"><div><h3>Ta phase actuelle vs tes régimes précédents</h3><p class="card__sub">Phases de perte et de reprise détectées dans tes pesées depuis le début</p></div></div><div id="phase-current"></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Tes cycles de poids</h3><p class="card__sub">Moyennes hebdomadaires · bleu = perte, rouge = reprise (variation de 4 kg ou plus)</p></div></div><div class="chart-legend" id="lg-phases"></div><div class="chart-box chart-box--tall"><canvas id="c-phases"></canvas></div></div>
+          <div class="card span-2"><div class="card__head"><div><h3>Détail des phases</h3><p class="card__sub">Durée, rythme, pas moyens et délai avant de reprendre la moitié du poids perdu</p></div></div><div id="phase-table"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Tes records</h3><p class="card__sub">Sur tout l'historique</p></div></div><div id="records"></div></div>
+          <div class="card"><div class="card__head"><div><h3>Le même mois, chaque année</h3><p class="card__sub" id="same-month-sub">Poids moyen et pas par jour</p></div></div><div class="chart-legend" id="lg-same-month"></div><div class="chart-box "><canvas id="c-same-month"></canvas></div></div>
         </div>
         <div class="grid grid--3" id="history-grid"></div>
       </section>
@@ -639,6 +673,13 @@
   <script src="js/analysis/lifestyle/sleepStressStats.js"></script>
   <script src="js/analysis/lifestyle/correlations.js"></script>
   <script src="js/analysis/lifestyle/longTerm.js"></script>
+  <script src="js/analysis/lifestyle/weightPhases.js"></script>
+  <script src="js/analysis/lifestyle/weekPattern.js"></script>
+  <script src="js/analysis/lifestyle/fluctuationModel.js"></script>
+  <script src="js/analysis/lifestyle/budget.js"></script>
+  <script src="js/analysis/lifestyle/rhythms.js"></script>
+  <script src="js/analysis/lifestyle/recovery.js"></script>
+  <script src="js/analysis/lifestyle/records.js"></script>
   <script src="js/analysis/lifestyle/lifestyle.js"></script>
   <script src="js/analysis/insights.js"></script>
   <!-- Graphiques -->
@@ -658,6 +699,7 @@
   <script src="js/charts/heartCharts.js"></script>
   <script src="js/charts/correlationCharts.js"></script>
   <script src="js/charts/longTermCharts.js"></script>
+  <script src="js/charts/insightCharts.js"></script>
   <!-- Silhouette -->
   <script src="js/silhouette/bodyModel.js"></script>
   <script src="js/silhouette/profileModel.js"></script>
@@ -673,6 +715,7 @@
   <script src="js/ui/summaryPanels.js"></script>
   <script src="js/ui/dailyReadingCard.js"></script>
   <script src="js/ui/lifestylePanels.js"></script>
+  <script src="js/ui/analysisCards.js"></script>
   <script src="js/ui/printReport.js"></script>
   <script src="js/ui/dateFilter.js"></script>
   <script src="js/ui/shareReceiver.js"></script>

@@ -110,3 +110,7 @@
 .is-printing .file-status__details { display: none; }
 
 .is-printing .view-more { display: none !important; }
+
+.is-printing .fact__value { font-size: 12px; }
+.is-printing .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.is-printing .callout, .is-printing .contrib li, .is-printing .meal-list li, .is-printing .compare__row { font-size: 10px; }

@@ -64,5 +64,44 @@
     };
   }
 
-  SP.analysis.lifestyle.activity = { analyze, STEP_GOAL };
+  /**
+   * Mouvement spontané : pas hors séances, semaine par semaine, à côté de
+   * l'apport moyen de la semaine. En régime, le corps a tendance à réduire ce
+   * mouvement sans qu'on s'en rende compte : un lien positif (moins manger,
+   * moins bouger) signale cette compensation. Le bilan n'est pas utilisé ici :
+   * il contient déjà la dépense due aux pas (lien mécanique).
+   */
+  function spontaneous(days, sessions) {
+    const sessionSteps = new Map();
+    (sessions || []).forEach((s) => {
+      if (!isFiniteNumber(s.steps)) return;
+      const k = dayKey(s.date);
+      sessionSteps.set(k, (sessionSteps.get(k) || 0) + s.steps);
+    });
+    const weeks = new Map();
+    days.forEach((d) => {
+      if (d.partial || !isFiniteNumber(d.steps)) return;
+      const k = dayKey(weekStart(d.date));
+      if (!weeks.has(k)) weeks.set(k, { date: weekStart(d.date), steps: [], intake: [] });
+      const w = weeks.get(k);
+      w.steps.push(Math.max(0, d.steps - (sessionSteps.get(d.key) || 0)));
+      if (d.logStatus === 'complete') w.intake.push(d.kcalIn);
+    });
+    const list = [...weeks.values()]
+      .filter((w) => w.steps.length >= 4)
+      .sort((a, b) => a.date - b.date)
+      .map((w) => ({ date: w.date, steps: mean(w.steps), intake: w.intake.length >= 3 ? mean(w.intake) : null }));
+    if (list.length < 3) return null;
+    const pairs = list.filter((w) => isFiniteNumber(w.intake)).map((w) => [w.intake, w.steps]);
+    const half = Math.floor(list.length / 2);
+    return {
+      weeks: list,
+      r: pairs.length >= 6 ? SP.analysis.lifestyle.correlations.pearson(pairs) : null,
+      nPairs: pairs.length,
+      firstHalf: mean(list.slice(0, half).map((w) => w.steps)),
+      secondHalf: mean(list.slice(half).map((w) => w.steps)),
+    };
+  }
+
+  SP.analysis.lifestyle.activity = { analyze, spontaneous, STEP_GOAL };
 })(window.SP);

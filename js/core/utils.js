@@ -167,6 +167,32 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  /**
+   * Résout le système linéaire A·x = b (élimination de Gauss, pivot partiel).
+   * Retourne null si la matrice est singulière.
+   */
+  function solveLinear(A, b) {
+    const n = b.length;
+    const M = A.map((row, i) => [...row, b[i]]);
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-12) return null;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = c + 1; r < n; r++) {
+        const f = M[r][c] / M[c][c];
+        for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+      }
+    }
+    const x = new Array(n).fill(0);
+    for (let r = n - 1; r >= 0; r--) {
+      let sum = M[r][n];
+      for (let k = r + 1; k < n; k++) sum -= M[r][k] * x[k];
+      x[r] = sum / M[r][r];
+    }
+    return x;
+  }
+
   /** Échappement HTML pour l'injection de texte venant des fichiers. */
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -194,5 +220,6 @@
     hexToRgb,
     withAlpha,
     escapeHtml,
+    solveLinear,
   };
 })(window.SP);

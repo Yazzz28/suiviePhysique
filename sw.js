@@ -12,7 +12,7 @@
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v18';
+const CACHE_VERSION = 'v19';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -93,6 +93,15 @@ const APP_FILES = [
   'js/ui/lifestylePanels.js',
   'js/ui/shareReceiver.js',
   'js/ui/viewSwitch.js',
+  'js/analysis/lifestyle/weightPhases.js',
+  'js/analysis/lifestyle/weekPattern.js',
+  'js/analysis/lifestyle/fluctuationModel.js',
+  'js/analysis/lifestyle/budget.js',
+  'js/analysis/lifestyle/rhythms.js',
+  'js/analysis/lifestyle/recovery.js',
+  'js/analysis/lifestyle/records.js',
+  'js/charts/insightCharts.js',
+  'js/ui/analysisCards.js',
   'js/app.js',
   'js/pwa.js',
 ];

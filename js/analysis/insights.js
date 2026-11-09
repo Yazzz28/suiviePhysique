@@ -11,7 +11,9 @@
 
   function build({ composition, daily, measurements, settings, projection, records, quality, lifestyle }) {
     const out = [];
-    const push = (tone, icon, html) => out.push({ tone, icon, html });
+    // Analyses montrées dans la vue Essentiel (les autres restent dans « Toutes les analyses »)
+    const ESSENTIAL_ICONS = new Set(['↓', '↑', '💪', '⏸', '🏁', '↺', '🎯', '⚖', '🍽']);
+    const push = (tone, icon, html) => out.push({ tone, icon, html, essential: ESSENTIAL_ICONS.has(icon) });
 
     // --- Poids global
     const w0 = first(composition, 'weight');
@@ -187,6 +189,44 @@
    * Formulées comme des constats : aucune relation de cause n'est affirmée.
    */
   function pushLifestyle(push, ls) {
+    // Phase actuelle vs régimes précédents
+    const ph = ls.phases;
+    if (ph && ph.current && ph.current.type === 'loss' && ph.comparison) {
+      const c = ph.comparison;
+      push(
+        'info',
+        '↺',
+        `Ta perte actuelle (<strong>${fmtDelta(ph.current.kg, 1)} kg en ${fmt(ph.current.weeks, 0)} sem.</strong>, ${fmtDelta(ph.current.ratePerWeek, 2)} kg/sem.) ` +
+          `est ${ph.current.ratePerWeek < c.pastRate * 1.2 ? 'plus rapide que' : 'comparable à'} tes ${c.pastCount} régimes précédents (${fmtDelta(c.pastRate, 2)} kg/sem. en moyenne)` +
+          (c.regained ? `, tous suivis d'une reprise de la moitié du poids en ${fmt(c.pastRegainWeeks, 0)} sem. en moyenne : la stabilisation sera décisive.` : '.')
+      );
+    }
+    // Budget pour la date cible
+    const b = ls.budget;
+    if (b && b.plan && !b.plan.invalid) {
+      push(
+        b.plan.belowFloor || b.plan.tooFast ? 'warn' : 'good',
+        '🎯',
+        `Pour atteindre ton objectif à la date choisie : <strong>${fmt(b.plan.intake, 0)} kcal/j</strong> ` +
+          `(dépense réelle estimée ${fmt(b.tdee, 0)} kcal/j)` +
+          (b.plan.belowFloor ? ', sous le minimum conseillé : vise une date plus lointaine.' : b.plan.tooFast ? ', un rythme rapide au départ.' : '.')
+      );
+    }
+    // Protéines repas par repas
+    const pq = ls.protein;
+    if (pq && pq.meals >= 10) {
+      push(
+        pq.reached / pq.meals >= 0.6 ? 'good' : 'warn',
+        '🍽',
+        `<strong>${pq.reached} repas sur ${pq.meals}</strong> atteignent ${pq.threshold} g de protéines.` +
+          (pq.best.length ? ` Tes aliments les plus protéinés pour leurs calories : ${pq.best.slice(0, 3).map((f) => f.name).join(', ')}.` : '')
+      );
+    }
+    // Effet week-end
+    const wp = ls.weekPattern;
+    if (wp && isFiniteNumber(wp.erasedDays) && wp.erasedDays >= 0.5) {
+      push('warn', '📅', `Ton week-end efface l'équivalent de <strong>${fmt(wp.erasedDays, 1)} jour(s) de déficit</strong> de semaine (bilan ${fmtDelta(wp.weekendBalance, 0)} vs ${fmtDelta(wp.weekBalance, 0)} kcal/j).`);
+    }
     const e = ls.energy;
     if (isFiniteNumber(e.meanBalance) && isFiniteNumber(e.impliedBalance) && e.counts.complete >= 7) {
       const gap = e.impliedBalance - e.meanBalance;

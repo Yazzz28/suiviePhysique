@@ -33,6 +33,11 @@
     if (sleep) html.push(kpi('Sommeil', kit.fmtDuration(sleep.durationMean), '', `${sleep.nights} nuits · ${sleep.shortNights} sous 7 h`));
     if (stressHeart && isFiniteNumber(stressHeart.stressMean)) html.push(kpi('Stress moyen', fmt(stressHeart.stressMean, 0), '/ 100', `${stressHeart.stressDays} jours mesurés`));
     if (stressHeart && isFiniteNumber(stressHeart.hrRestMean)) html.push(kpi('FC de repos', fmt(stressHeart.hrRestMean, 0), 'bpm', 'Estimée : heure la plus basse du jour'));
+    const rec = lifestyle.recovery && lifestyle.recovery.today;
+    if (rec) {
+      const level = rec.score >= 65 ? 'bonne' : rec.score <= 35 ? 'basse' : 'dans ta normale';
+      html.push(kpi('Récupération', fmt(rec.score, 0), '/ 100', `${level} · mesure du ${SP.core.utils.fmtDate(rec.date)}`, true));
+    }
     host.innerHTML = html.join('');
     host.classList.toggle('hidden', !html.length);
   }

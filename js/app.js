@@ -91,6 +91,9 @@
           allDaily,
           rho: projection ? projection.rho : null,
           includeIncomplete: v.settings.includeIncompleteMeals,
+          settings: v.settings,
+          weightNow: weightTrend ? weightTrend.last : null,
+          daily,
         });
       } catch (err) {
         console.error('[SuiviPhysique] Analyse de l\'export santé impossible', err);
@@ -143,7 +146,8 @@
     toggleSection('sleep', !!ls && ls.has.sleep);
     toggleSection('heart', !!ls && ls.has.heart);
     toggleSection('correlations', !!ls && !!ls.correlations);
-    toggleSection('history', !!ls && !!ls.history && ls.history.metrics.length > 0);
+    toggleSection('history', !!ls && ((!!ls.history && ls.history.metrics.length > 0) || !!ls.phases));
+    toggleSection('rhythms', !!ls && !!ls.rhythms && (ls.rhythms.windows.length > 0 || !!ls.rhythms.jetlag));
 
     renderSubtitle(ctx);
     safe('lecture du jour', () => {
@@ -179,7 +183,9 @@
       if (ls.has.heart) safe('stress et cœur', () => SP.charts.heart.render(ctx));
       if (ls.correlations) safe('corrélations', () => SP.charts.correlations.render(ctx));
       if (ls.history) safe('historique', () => SP.charts.longTerm.render(ctx));
+      safe('analyses avancées', () => SP.charts.insights.render(ctx));
     }
+    safe("cartes d'analyse", () => SP.ui.analysisCards.render(ctx));
     safe('tableaux', () => {
       toggleCard('table-measurements', ctx.rawMeasurements.length > 0);
       toggleCard('table-composition', ctx.composition.length > 0);
@@ -238,7 +244,7 @@
       ? list
           .map(
             (it) =>
-              `<li class="insight insight--${it.tone}"><span class="insight__icon" aria-hidden="true">${it.icon}</span><span>${it.html}</span></li>`
+              `<li class="insight insight--${it.tone}"${it.essential ? ' data-essential' : ''}><span class="insight__icon" aria-hidden="true">${it.icon}</span><span>${it.html}</span></li>`
           )
           .join('')
       : '<li class="muted">Pas assez de données sur cette période.</li>';

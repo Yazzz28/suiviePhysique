@@ -113,7 +113,26 @@
         const date = r.time('start_time');
         const kcal = r.num('calorie');
         if (!date || kcal === null) return null;
-        return { date, mealType: r.num('meal_type'), name: r.str('name') || 'Sans nom', kcal };
+        return { date, mealType: r.num('meal_type'), name: r.str('name') || 'Sans nom', kcal, foodInfoId: r.str('food_info_id') };
+      },
+    },
+    {
+      // Fiches aliments : valeurs nutritionnelles de référence (densité protéique, indépendante de la portion)
+      table: 'com.samsung.health.food_info',
+      key: 'foodInfo',
+      label: 'Fiches aliments',
+      adapt: (r) => {
+        const kcal = r.num('calorie');
+        if (!kcal || kcal <= 0) return null;
+        return {
+          date: new Date(0),
+          id: r.str('datauuid'),
+          name: r.str('name'),
+          kcal,
+          protein: r.num('protein'),
+          carbs: r.num('carbohydrate'),
+          fat: r.num('total_fat'),
+        };
       },
     },
     {
@@ -185,6 +204,8 @@
           maxHr: positive(r.num('max_heart_rate')),
           distance: positive(r.num('distance')),
           vo2max: positive(r.num('vo2_max')),
+          meanSpeed: positive(r.num('mean_speed')), // m/s
+          steps: r.num('count_type') === 30001 ? positive(r.num('count')) : null, // compteur en pas
         };
       },
     },

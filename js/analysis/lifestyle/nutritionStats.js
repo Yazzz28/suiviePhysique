@@ -82,5 +82,76 @@
     };
   }
 
-  SP.analysis.lifestyle.nutrition = { analyze, KCAL_PER_G };
+  const PROTEIN_MEAL_G = 25; // repère : ~25-30 g par repas pour stimuler la synthèse musculaire
+  const MIN_MEAL_KCAL = 150; // en dessous : collation légère, boisson
+  const MIN_FOOD_KCAL = 200; // kcal consommées sur la période pour juger un aliment
+
+  /**
+   * Qualité protéique : protéines par repas et densité protéique des aliments
+   * (g de protéines pour 100 kcal, valeur indépendante de la portion).
+   * @param {object[]} meals     repas de la période (nutriments par repas)
+   * @param {object[]} foods     aliments saisis de la période
+   * @param {object[]} foodInfo  fiches aliments (valeurs de référence)
+   */
+  function proteinQuality(meals, foods, foodInfo) {
+    const big = (meals || []).filter((m) => m.kcal >= MIN_MEAL_KCAL && isFiniteNumber(m.protein));
+    if (!big.length) return null;
+    const byType = MEAL_ORDER.map((type) => {
+      const list = big.filter((m) => m.mealType === type);
+      return {
+        type,
+        label: MEAL_TYPES[type],
+        protein: mean(list.map((m) => m.protein)),
+        reached: list.filter((m) => m.protein >= PROTEIN_MEAL_G).length,
+        n: list.length,
+      };
+    }).filter((t) => t.n > 0);
+
+    // Densité protéique par aliment consommé
+    const info = new Map((foodInfo || []).map((f) => [f.id, f]));
+    const agg = new Map();
+    (foods || []).forEach((f) => {
+      const ref = info.get(f.foodInfoId);
+      if (!ref || !isFiniteNumber(ref.protein)) return;
+      const key = normalizeName(f.name).toLowerCase();
+      const cur = agg.get(key) || { name: normalizeName(f.name), kcal: 0, count: 0, density: (ref.protein * 100) / ref.kcal };
+      cur.kcal += f.kcal;
+      cur.count++;
+      agg.set(key, cur);
+    });
+    const eaten = [...agg.values()].filter((f) => f.kcal >= MIN_FOOD_KCAL);
+    const best = [...eaten].sort((a, b) => b.density - a.density).slice(0, 6);
+    const traps = eaten.filter((f) => f.density < 4).sort((a, b) => b.kcal - a.kcal).slice(0, 6);
+
+    // Repas les plus protéinés pour leurs calories, avec leurs aliments
+    const foodsByMeal = new Map();
+    (foods || []).forEach((f) => {
+      const k = `${SP.core.utils.dayKey(f.date)}|${f.mealType}`;
+      if (!foodsByMeal.has(k)) foodsByMeal.set(k, []);
+      foodsByMeal.get(k).push(normalizeName(f.name));
+    });
+    const bestMeals = [...big]
+      .filter((m) => m.protein >= PROTEIN_MEAL_G)
+      .sort((a, b) => b.protein / b.kcal - a.protein / a.kcal)
+      .slice(0, 5)
+      .map((m) => ({
+        date: m.date,
+        label: MEAL_TYPES[m.mealType] || m.title,
+        kcal: m.kcal,
+        protein: m.protein,
+        foods: [...new Set(foodsByMeal.get(`${SP.core.utils.dayKey(m.date)}|${m.mealType}`) || [])],
+      }));
+
+    return {
+      threshold: PROTEIN_MEAL_G,
+      meals: big.length,
+      reached: big.filter((m) => m.protein >= PROTEIN_MEAL_G).length,
+      byType,
+      best,
+      traps,
+      bestMeals,
+    };
+  }
+
+  SP.analysis.lifestyle.nutrition = { analyze, proteinQuality, KCAL_PER_G, PROTEIN_MEAL_G };
 })(window.SP);
