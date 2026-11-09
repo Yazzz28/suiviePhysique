@@ -5,7 +5,51 @@
 (function (SP) {
   'use strict';
 
-  const { fmtDate, fmt, DAY_MS } = SP.core.utils;
+  const { fmtDate, fmt, DAY_MS, hexToRgb } = SP.core.utils;
+
+  /** « #rrggbb », « rgb() », « rgba() », « transparent » → { r, g, b, a } (null si inconnu). */
+  function parseColor(color) {
+    if (typeof color !== 'string') return null;
+    const c = color.trim();
+    if (c === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+    if (c[0] === '#') {
+      const [r, g, b] = hexToRgb(c);
+      return { r, g, b, a: 1 };
+    }
+    const m = /^rgba?\(([^)]+)\)$/.exec(c);
+    if (!m) return null;
+    const p = m[1].split(',').map((x) => parseFloat(x));
+    return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+  }
+
+  /**
+   * Couleur opaque équivalente à `color` posée sur le fond des cartes.
+   * Une couleur semi-transparente n'a pas le même aspect sur le graphique
+   * (fond de carte) et dans l'infobulle (fond inversé) : on fige donc son
+   * rendu sur le fond de la carte pour les pastilles d'infobulle et de légende.
+   */
+  function solidify(color, surface) {
+    const c = parseColor(color);
+    const bg = parseColor(surface || tokens().surface);
+    if (!c || !bg || c.a >= 1) return color;
+    const mix = (a, b) => Math.round(a * c.a + b * (1 - c.a));
+    return `rgb(${mix(c.r, bg.r)}, ${mix(c.g, bg.g)}, ${mix(c.b, bg.b)})`;
+  }
+
+  /**
+   * Pastille d'infobulle : couleur réellement dessinée pour l'élément survolé
+   * (gère les couleurs différentes barre par barre), rendue opaque.
+   */
+  function tooltipLabelColor(ctx) {
+    const o = (ctx.element && ctx.element.options) || {};
+    const type = ctx.dataset.type || ctx.chart.config.type;
+    const isLine = type === 'line' && ctx.dataset.showLine !== false;
+    let color = isLine ? o.borderColor : o.backgroundColor;
+    const parsed = parseColor(color);
+    if (!parsed || parsed.a === 0) color = isLine ? o.backgroundColor : o.borderColor;
+    const solid = solidify(color);
+    return { borderColor: solid, backgroundColor: solid };
+  }
   const registry = new Map();
 
   /** Lit les tokens CSS courants (light/dark). */
@@ -258,6 +302,7 @@
       boxPadding: 4,
       usePointStyle: true,
     });
+    C.defaults.plugins.tooltip.callbacks.labelColor = tooltipLabelColor;
   }
 
   /** Échelle X temporelle (linéaire en ms, libellés FR, pas adaptatif). */
@@ -340,9 +385,9 @@
         (it) =>
           `<span class="chart-legend__item"><span class="chart-legend__swatch ${
             it.box ? 'chart-legend__swatch--box' : ''
-          } ${it.dashed ? 'chart-legend__swatch--dash' : ''}" style="background:${it.color};border-color:${
+          } ${it.dashed ? 'chart-legend__swatch--dash' : ''}" style="background:${solidify(it.color)};border-color:${solidify(
             it.color
-          }"></span>${it.label}</span>`
+          )}"></span>${it.label}</span>`
       )
       .join('');
   }
@@ -355,6 +400,7 @@
   SP.charts.theme = {
     setPrintMode,
     tokens,
+    solidify,
     colorFor,
     applyDefaults,
     timeScale,

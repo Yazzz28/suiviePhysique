@@ -99,12 +99,13 @@
             backgroundColor: keys.map((k) => colors[k]),
             borderRadius: 4,
             maxBarThickness: 28,
+            order: 1, // dessinée avant la plage de référence, qui reste visible par-dessus
           },
           {
             // Plage de référence : trait fin par-dessus la barre
             label: 'Plage de référence',
             data: keys.map((k) => MACRO_RANGES[k]),
-            backgroundColor: withAlpha(t.text, 0.55),
+            backgroundColor: t.textSecondary,
             borderRadius: 3,
             barThickness: 6,
             grouped: false,
@@ -133,7 +134,7 @@
     });
     theme.setLegend('lg-macro-share', [
       { label: 'Ta répartition', color: t.series[4], box: true },
-      { label: 'Plage de référence adulte', color: withAlpha(t.text, 0.55), box: true },
+      { label: 'Plage de référence adulte', color: t.textSecondary, box: true },
     ]);
   }
 
