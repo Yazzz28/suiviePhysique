@@ -12,18 +12,23 @@
   const positive = (v) => (v !== null && v > 0 ? v : null);
   const msToMin = (v) => (v === null ? null : v / 60000);
 
-  /** Codes d'exercice confirmés par la documentation Samsung ; les autres sont affichés avec leur code. */
+  /**
+   * Codes d'exercice connus : documentation Samsung (marche, course, vélo,
+   * randonnée, natation) et séances identifiées par l'utilisateur (judo,
+   * tennis de table). Les autres codes, dont 0 (personnalisé), sont « Indéterminé ».
+   */
   const EXERCISE_TYPES = {
-    0: 'Personnalisé',
     1001: 'Marche',
     1002: 'Course',
+    6004: 'Tennis de table',
+    7003: 'Judo',
     11007: 'Vélo',
     13001: 'Randonnée',
     14001: 'Natation',
   };
 
   function exerciseLabel(code) {
-    return EXERCISE_TYPES[code] || `Activité (code ${code})`;
+    return EXERCISE_TYPES[code] || 'Indéterminé';
   }
 
   const MEAL_TYPES = {
