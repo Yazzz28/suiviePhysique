@@ -52,7 +52,7 @@
    * les mêmes jours) ; les lignes de référence n'y figurent pas.
    */
   function xTooltip(unit, decimals) {
-    return { ...theme.timeTooltip(unit, decimals), mode: 'x', filter: (item) => !item.dataset.isRef };
+    return { ...theme.timeTooltip(unit, decimals), mode: 'spDay', filter: (item) => !item.dataset.isRef };
   }
 
   function tickFormatter(unit) {

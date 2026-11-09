@@ -96,7 +96,23 @@
           x: { ...theme.timeScale(minX, maxX), stacked: true },
           y: theme.valueScale({ stacked: true, beginAtZero: true, ticks: { callback: (v) => fmt(v, 0) + ' kcal' } }),
         },
-        plugins: { tooltip: kit.xTooltip('kcal', 0) },
+        plugins: {
+          tooltip: {
+            ...kit.xTooltip('kcal', 0),
+            callbacks: {
+              ...kit.xTooltip('kcal', 0).callbacks,
+              footer: (items) => {
+                if (!items.length) return '';
+                const d = rows.find((r) => r.date.getTime() === items[0].parsed.x);
+                if (!d) return '';
+                const out = [`Dépense totale : ${fmt(d.tdee, 0)} kcal`];
+                if (isFiniteNumber(d.balance)) out.push(`Bilan du jour : ${fmtDelta(d.balance, 0)} kcal`);
+                else if (d.lowLog) out.push('Saisie probablement incomplète');
+                return out;
+              },
+            },
+          },
+        },
       },
     });
   }

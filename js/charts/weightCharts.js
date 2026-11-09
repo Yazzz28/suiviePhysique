@@ -59,7 +59,7 @@
       datasets.push(
         { label: 'Fluctuation basse', data: trendPts.map((p) => ({ x: p.x, y: p.y === null ? null : p.y - sd })), borderColor: 'transparent', backgroundColor: bandColor, pointRadius: 0, isBand: true, order: 6 },
         { label: 'Fluctuation haute', data: trendPts.map((p) => ({ x: p.x, y: p.y === null ? null : p.y + sd })), borderColor: 'transparent', backgroundColor: bandColor, fill: '-1', pointRadius: 0, isBand: true, order: 6 },
-        { label: 'Tendance', data: trendPts, borderColor: t.series[0], borderWidth: 2.5, pointRadius: 0, order: 1 }
+        { label: 'Tendance', data: trendPts, borderColor: t.series[0], borderWidth: 2.5, pointRadius: 0, order: 1, fluctuation: sd }
       );
       legend.push({ label: 'Tendance lissée', color: t.series[0] });
       legend.push({ label: `Fluctuation normale (± ${fmt(sd, 1)} kg)`, color: bandColor, box: true });
@@ -83,7 +83,18 @@
       datasets.push(
         { label: 'Zone basse', data: fast.map((p) => ({ x: p.x, y: p.y - sd })), borderColor: 'transparent', backgroundColor: zone, pointRadius: 0, tension: 0, isBand: true, order: 7 },
         { label: 'Zone haute', data: slow.map((p) => ({ x: p.x, y: p.y + sd })), borderColor: 'transparent', backgroundColor: zone, fill: '-1', pointRadius: 0, tension: 0, isBand: true, order: 7 },
-        { label: 'Projection', data: projectionCurve, borderColor: t.textSecondary, borderWidth: 1.8, borderDash: [5, 4], pointRadius: 0, tension: 0, order: 3 }
+        {
+          label: 'Projection',
+          data: projectionCurve,
+          borderColor: t.textSecondary,
+          borderWidth: 1.8,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          tension: 0,
+          order: 3,
+          // Détail affiché dans l'infobulle : rythme rapide / lent et zone probable des pesées
+          range: { fast, slow, sd },
+        }
       );
       legend.push({ label: `Projection au rythme actuel (${fmtDelta(projection.ratePerWeek, 2)} kg/sem.)`, color: t.textSecondary, dashed: true });
       legend.push({ label: 'Zone probable des pesées', color: zone, box: true });
@@ -186,6 +197,24 @@
             callbacks: {
               title: (items) => (items.length ? fmtDate(new Date(items[0].parsed.x), 'weekday') : ''),
               label: (ctx) => (ctx.raw && ctx.raw.label ? ` ${ctx.raw.label}` : ` ${ctx.dataset.label} : ${fmt(ctx.parsed.y, 2)} kg`),
+              footer: (items) => {
+                const lines = [];
+                items.forEach((it) => {
+                  const ds = it.dataset;
+                  if (ds.range) {
+                    const i = it.dataIndex;
+                    const fast = ds.range.fast[i];
+                    const slow = ds.range.slow[i];
+                    if (fast && slow) {
+                      lines.push(`Rythme rapide : ${fmt(fast.y, 1)} kg · rythme lent : ${fmt(slow.y, 1)} kg`);
+                      lines.push(`Pesée probable entre ${fmt(fast.y - ds.range.sd, 1)} et ${fmt(slow.y + ds.range.sd, 1)} kg`);
+                    }
+                  } else if (isFiniteNumber(ds.fluctuation) && isFiniteNumber(it.parsed.y)) {
+                    lines.push(`Fluctuation normale : ${fmt(it.parsed.y - ds.fluctuation, 1)} à ${fmt(it.parsed.y + ds.fluctuation, 1)} kg`);
+                  }
+                });
+                return lines;
+              },
             },
           },
           spVLines: projection ? { lines: [{ x: lastMs, label: "Aujourd'hui", color: t.textSecondary }] } : undefined,

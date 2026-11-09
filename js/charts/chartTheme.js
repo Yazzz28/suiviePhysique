@@ -173,6 +173,41 @@
     },
   };
 
+  /**
+   * Mode d'infobulle « même jour » : prend le point le plus proche du curseur
+   * (en x), puis tous les points des autres séries ayant exactement la même
+   * date. Évite de voir deux jours voisins dans la même infobulle quand les
+   * points sont serrés (barres + courbes sur un axe temporel).
+   */
+  function sameDayMode(chart, e, _options, useFinalPosition) {
+    const pos = window.Chart.helpers.getRelativePosition(e, chart);
+    const metas = chart.getSortedVisibleDatasetMetas();
+    let best = null;
+    let bestDist = Infinity;
+    metas.forEach((meta) => {
+      if (meta._dataset && meta._dataset.isRef) return;
+      meta.data.forEach((el, index) => {
+        const parsed = meta.controller.getParsed(index);
+        if (!parsed || parsed.y === null || parsed.y === undefined) return;
+        const { x } = el.getProps(['x'], useFinalPosition);
+        const d = Math.abs(x - pos.x);
+        if (d < bestDist) {
+          bestDist = d;
+          best = parsed.x;
+        }
+      });
+    });
+    if (best === null) return [];
+    const items = [];
+    metas.forEach((meta) => {
+      meta.data.forEach((el, index) => {
+        const parsed = meta.controller.getParsed(index);
+        if (parsed && parsed.x === best && parsed.y !== null && parsed.y !== undefined) items.push({ element: el, datasetIndex: meta.index, index });
+      });
+    });
+    return items;
+  }
+
   let registered = false;
   let printMode = false;
   let screenPixelRatio = null;
@@ -191,6 +226,7 @@
     const C = window.Chart;
     if (!registered) {
       C.register(crosshair, bands, vLines, weekends);
+      C.Interaction.modes.spDay = sameDayMode;
       registered = true;
     }
     C.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
