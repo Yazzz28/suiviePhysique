@@ -58,10 +58,11 @@
   }
 
   /**
-   * @param {{zone: HTMLElement, input: HTMLInputElement, folderInput?: HTMLInputElement,
+   * @param {{zone: HTMLElement, input: HTMLInputElement, filesButton?: HTMLElement, folderInput?: HTMLInputElement,
    *          folderButton?: HTMLElement, onFiles: (files: File[]) => void}} opts
    */
-  function bind({ zone, input, folderInput, folderButton, onFiles }) {
+  function bind({ zone, input, filesButton, folderInput, folderButton, onFiles }) {
+    if (filesButton) filesButton.addEventListener('click', () => input.click());
     const stop = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -89,11 +90,7 @@
       if (files.length) onFiles(files);
     });
     if (folderInput && folderButton) {
-      folderButton.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        folderInput.click();
-      });
+      folderButton.addEventListener('click', () => folderInput.click());
       folderInput.addEventListener('change', () => {
         const files = filesFromFolderInput(folderInput);
         folderInput.value = '';
@@ -143,6 +140,10 @@
     host.innerHTML = html;
   }
 
+  function renderError(host, message) {
+    host.innerHTML = statusItem(false, 'Partage', escapeHtml(message));
+  }
+
   /** Progression de lecture de l'export. */
   function renderProgress(host, done, total, label) {
     const pct = total ? Math.round((done / total) * 100) : 0;
@@ -150,5 +151,5 @@
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>`;
   }
 
-  SP.ui.dropzone = { bind, renderStatus, renderProgress };
+  SP.ui.dropzone = { bind, renderStatus, renderProgress, renderError };
 })(window.SP);

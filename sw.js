@@ -4,13 +4,15 @@
  * - Les données de l'utilisateur (CSV) ne passent jamais par ici : elles sont
  *   lues via FileReader, en mémoire, et ne sont ni requêtées ni stockées.
  * - Seuls les fichiers de l'app (même origine, requêtes GET) sont mis en cache.
+ * - Fichiers partagés depuis Android (share_target du manifeste) : gardés en
+ *   MÉMOIRE le temps que la page les récupère, jamais écrits dans le cache.
  *
  * Mises à jour : incrémenter CACHE_VERSION à chaque déploiement qui modifie
  * un fichier de l'app. Le navigateur détecte alors un nouveau service worker,
  * l'installe en attente, et la page propose « Recharger ». À l'activation,
  * les anciens caches sont supprimés.
  */
-const CACHE_VERSION = 'v16';
+const CACHE_VERSION = 'v17';
 const CACHE_PREFIX = 'suivi-physique-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -89,6 +91,7 @@ const APP_FILES = [
   'js/charts/correlationCharts.js',
   'js/charts/longTermCharts.js',
   'js/ui/lifestylePanels.js',
+  'js/ui/shareReceiver.js',
   'js/app.js',
   'js/pwa.js',
 ];
@@ -120,13 +123,37 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-/** La page demande d'activer la version en attente (bouton « Recharger »). */
+/** Fichiers reçus par partage, en attente de la page (mémoire du service worker uniquement). */
+let sharedFiles = null;
+const SHARE_URL = new URL('share-target', self.location).href;
+
 self.addEventListener('message', (event) => {
+  // La page demande d'activer la version en attente (bouton « Recharger »).
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  // La page ouverte par un partage réclame les fichiers, qui sont aussitôt oubliés ici.
+  if (event.data && event.data.type === 'GET_SHARED_FILES' && event.source) {
+    event.source.postMessage({ type: 'SHARED_FILES', files: sharedFiles || [] });
+    sharedFiles = null;
+  }
 });
+
+/** Partage Android : POST multipart vers share-target, puis redirection vers l'app. */
+async function receiveShare(request) {
+  try {
+    const form = await request.formData();
+    sharedFiles = form.getAll('files').filter((f) => f && typeof f === 'object' && 'name' in f);
+  } catch (err) {
+    sharedFiles = [];
+  }
+  return Response.redirect(new URL('./?partage=1', self.location).href, 303);
+}
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
+  if (request.method === 'POST' && request.url === SHARE_URL) {
+    event.respondWith(receiveShare(request));
+    return;
+  }
   if (request.method !== 'GET') return;
   if (new URL(request.url).origin !== self.location.origin) return;
 

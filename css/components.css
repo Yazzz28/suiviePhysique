@@ -52,12 +52,10 @@
   border: 2px dashed var(--axis);
   border-radius: var(--radius-l);
   background: var(--surface-1);
-  padding: var(--space-7) var(--space-5);
+  padding: var(--space-6) var(--space-5);
   transition: border-color 0.15s, background 0.15s;
-  cursor: pointer;
 }
 
-.dropzone:hover,
 .dropzone.is-over {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, var(--surface-1));
@@ -73,11 +71,39 @@
 .dropzone__title { font-size: 1.1rem; font-weight: 600; }
 .dropzone__hint { color: var(--text-muted); font-size: 0.9rem; margin-top: var(--space-1); }
 
-.dropzone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+/* Deux choix d'import, comme dans le lecteur audio */
+.import-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  text-align: left;
+}
+
+.import-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.import-option:hover { background: var(--surface-hover); }
+.import-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.import-option svg { width: 26px; height: 26px; flex: none; color: var(--accent); }
+.import-option--primary { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface-1)); }
+.import-option__title { display: block; font-weight: 600; }
+.import-option__sub { display: block; font-size: 0.8rem; color: var(--text-muted); }
+
+@media (max-width: 560px) {
+  .import-options { grid-template-columns: minmax(0, 1fr); }
 }
 
 .file-status {
@@ -540,12 +566,6 @@
 }
 
 /* ---- Import de dossier (export santé) ---- */
-.dropzone__folder {
-  position: relative;
-  z-index: 1; /* au-dessus du sélecteur de fichiers qui couvre la zone */
-  margin-top: var(--space-4);
-}
-
 .dropzone__note {
   margin-top: var(--space-3);
   font-size: 0.82rem;

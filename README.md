@@ -18,6 +18,11 @@ Dans l'app Samsung Health : *Paramètres › Télécharger les données personne
 - Le dernier jour de l'export (en cours au moment de l'export) est exclu des moyennes journalières.
 - Sans fichier de pesées, les pesées présentes dans l'export (balance connectée, montre) sont utilisées, à partir de la reprise du suivi actuel (après la dernière pause de plus de 45 jours).
 
+### Sur Android
+
+- **Importer un dossier** fonctionne aussi sur téléphone (Chrome) : choisis le dossier de l'export.
+- **Partager** (app installée) : dans Mes fichiers, sélectionne les fichiers puis *Partager › Suivi Physique*. Le service worker reçoit les fichiers (`share_target` du manifeste), les garde **en mémoire** le temps que la page les récupère, puis les oublie ; rien n'est écrit dans le cache ni sur le disque.
+
 ### Installer sur mobile
 
 L'app est une PWA installable depuis sa version en ligne (GitHub Pages) :

@@ -62,18 +62,25 @@
       <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6m0 0-3 3m3-3 3 3"/>
       </svg>
-      <p class="dropzone__title">Glisse tes fichiers .csv ou ton dossier d'export ici</p>
-      <p class="dropzone__hint">ou clique pour choisir des fichiers (plusieurs possibles)</p>
-      <input type="file" id="file-input" accept=".csv,text/csv,text/plain" multiple aria-label="Choisir les fichiers CSV">
-      <button type="button" class="btn dropzone__folder" id="btn-folder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        Choisir un dossier
-      </button>
+      <p class="dropzone__title">Importe tes fichiers</p>
+      <p class="dropzone__hint">Ou glisse-les ici, fichiers .csv ou dossier entier</p>
+      <div class="import-options">
+        <button type="button" class="import-option import-option--primary" id="btn-folder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span><span class="import-option__title">Importer un dossier</span><span class="import-option__sub">Recommandé · tout d'un coup</span></span>
+        </button>
+        <button type="button" class="import-option" id="btn-files">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+          <span><span class="import-option__title">Importer des fichiers</span><span class="import-option__sub">Sélection multiple</span></span>
+        </button>
+      </div>
     </div>
-    <input type="file" id="folder-input" webkitdirectory multiple hidden aria-label="Choisir un dossier d'export">
+    <input type="file" id="file-input" accept=".csv,text/csv,text/comma-separated-values,text/plain,application/csv,application/vnd.ms-excel" multiple hidden aria-label="Choisir les fichiers CSV">
+    <input type="file" id="folder-input" webkitdirectory directory multiple hidden aria-label="Choisir un dossier d'export">
     <p class="dropzone__note">Export Samsung Health : dans l'app, Paramètres › Télécharger les données personnelles, puis dépose le dossier décompressé.
       Tu peux aussi mettre tes fichiers de pesées et de mensurations dans le même dossier. Le navigateur demande de confirmer l'import d'un dossier :
       seuls les fichiers utiles (≈ 25 tableaux) sont lus, en local ; contacts, badges et préférences ne sont jamais ouverts.</p>
+    <p class="dropzone__note">Sur Android, avec l'app installée : dans Mes fichiers, sélectionne les fichiers puis <strong>Partager › Suivi Physique</strong>.</p>
 
     <div class="file-status" id="file-status" aria-live="polite"></div>
 
@@ -654,6 +661,7 @@
   <script src="js/ui/lifestylePanels.js"></script>
   <script src="js/ui/printReport.js"></script>
   <script src="js/ui/dateFilter.js"></script>
+  <script src="js/ui/shareReceiver.js"></script>
   <!-- Application -->
   <script src="js/app.js"></script>
   <script src="js/pwa.js"></script>

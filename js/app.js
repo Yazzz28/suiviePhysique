@@ -320,12 +320,15 @@
     SP.ui.dropzone.bind({
       zone: $('dropzone'),
       input: $('file-input'),
+      filesButton: $('btn-files'),
       folderInput: $('folder-input'),
       folderButton: $('btn-folder'),
       onFiles: handleFiles,
     });
     SP.ui.templates.bind($('welcome'));
     SP.ui.dateFilter.bind($('period-filter'));
+    // Fichiers reçus par Partager › Suivi Physique (Android, app installée)
+    SP.ui.shareReceiver.init(handleFiles, (message) => SP.ui.dropzone.renderError($('file-status'), message));
     $('btn-reload').addEventListener('click', reset);
     SP.ui.printReport.bind($('btn-report'));
     bindSettings();
